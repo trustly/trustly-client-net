@@ -1,0 +1,23 @@
+﻿{
+  "request": {
+    "method": "GET",
+    "url": "/",
+    "headers": {
+      "Accept": {
+        "contains": "json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath":  "$[?(@.method == 'deposit')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "body": "Hello, World!",
+    "headers": {
+      "Content-Type":  "text/plain"
+    }
+  }
+}

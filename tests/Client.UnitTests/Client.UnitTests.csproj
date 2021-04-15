@@ -1,0 +1,68 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Trustly.Api.Client.UnitTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+    <PackageReference Include="WireMock.Net" Version="1.4.9" />
+    <PackageReference Include="WireMock.Net.FluentAssertions" Version="1.4.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Domain\Domain.csproj" />
+    <ProjectReference Include="..\..\src\Client\Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\Packets\credit_ok.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Packets\gluepay_notification.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Packets\gluepay_notification_additional_attribute.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Packets\gluepay_notification_local_api_test.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Packets\gluepay_notification_test.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Packets\gluepay_retry_immediately.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Packets\gluepay_stop.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Packets\glupay_notification_and_retry_immediately.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Packets\verification_ok.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Resources\Packets\" />
+    <Folder Include="Resources\Wiremock\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Resources\Packets\credit_ok.json" />
+    <None Remove="Resources\Packets\gluepay_notification.json" />
+    <None Remove="Resources\Packets\gluepay_notification_additional_attribute.json" />
+    <None Remove="Resources\Packets\gluepay_notification_local_api_test.json" />
+    <None Remove="Resources\Packets\gluepay_notification_test.json" />
+    <None Remove="Resources\Packets\gluepay_retry_immediately.json" />
+    <None Remove="Resources\Packets\gluepay_stop.json" />
+    <None Remove="Resources\Packets\glupay_notification_and_retry_immediately.json" />
+    <None Remove="Resources\Packets\verification_ok.json" />
+  </ItemGroup>
+</Project>

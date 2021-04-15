@@ -1,0 +1,9 @@
+tools
+**/bin
+**/obj
+**/node_modules
+
+.config
+.vs
+.vscode
+.DS_Store

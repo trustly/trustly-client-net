@@ -1,0 +1,11 @@
+{
+  "result": {
+    "signature": "ZQb9eHH9BeFGzT27lgqTHyb2IpWzEJbyemcSS0Vigd8V+xADYaPfEG6HnHqE6UlaFQYHKgjIbkyQEIZzIX4xz+c9tgpYDC4imTEF5gHxHFKU+opB9a0QFpXHo+1ZlJYi5by3laYTqYtaus3xhokBmaJi5Q9sQekGvwkEU3IjIxpVMvAadstJRQCJa/UugofyU15LEN8PJjN0O7IMZH+SW5K7tjQDsf2JbpnD8U0odTnQ6wsD71yTsKGJFr4gT/Bn6VaQq8BqVAKTxFviF1OOVz6bEDKJVvhvO1blaFeM3/OObEygQXhNzOA5/k6QKFbktFF2pN5pWnbA5gaiHU8Wfw==",
+    "uuid": "258a2184-2842-b485-25ca-293525152425",
+    "method": "credit",
+    "data": {
+      "status": "OK"
+    }
+  },
+  "version":"1.1"
+}
