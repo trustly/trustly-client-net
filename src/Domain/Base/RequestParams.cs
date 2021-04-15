@@ -3,8 +3,9 @@ using Newtonsoft.Json;
 
 namespace Trustly.Api.Domain.Base
 {
-    public class RequestParams<TParamsData>
-        where TParamsData : AbstractRequestParamsData
+    public class RequestParams<TData, TDataAttr>
+        where TData : AbstractRequestParamsData<TDataAttr>
+        where TDataAttr : AbstractRequestParamsDataAttributes
     {
         [JsonProperty("Signature")]
         public string Signature { get; set; }
@@ -13,6 +14,6 @@ namespace Trustly.Api.Domain.Base
         public string UUID { get; set; }
 
         [JsonProperty("Data")]
-        public TParamsData Data { get; set; }
+        public TData Data { get; set; }
     }
 }

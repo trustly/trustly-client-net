@@ -5,7 +5,7 @@ using Trustly.Api.Domain.Common;
 
 namespace Trustly.Api.Domain.Requests
 {
-    public class DepositRequestData : AbstractRequestParamsData<DepositRequestDataAttributes>
+    public class DepositRequestData : AbstractToTrustlyRequestParamsData<DepositRequestDataAttributes>
     {
         public string NotificationURL { get; set; }
 
@@ -46,7 +46,7 @@ namespace Trustly.Api.Domain.Requests
 
         /// <summary>
         /// The amount to deposit with exactly two decimals in the currency specified by Currency.
-        /// Do not use this attribute in combination with SuggestedMinAmount or SuggestedMaxAmount.
+        /// Do not use this attribute in combination with <see cref="AbstractDepositAndWithdrawDataAttributes.SuggestedMinAmount"/> and <see cref="AbstractDepositAndWithdrawDataAttributes.SuggestedMaxAmount"/>..
         /// Only digits. Use dot (.) as decimal separator.
         /// </summary>
         public string Amount { get; set; }

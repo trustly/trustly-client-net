@@ -3,14 +3,15 @@ using Newtonsoft.Json;
 
 namespace Trustly.Api.Domain.Base
 {
-    public class JsonRpcRequest<TData>
-        where TData : AbstractRequestParamsData
+    public class JsonRpcRequest<TParamsData, TParamsDataAttr>
+        where TParamsData : AbstractRequestParamsData<TParamsDataAttr>
+        where TParamsDataAttr : AbstractRequestParamsDataAttributes
     {
         [JsonProperty("method")]
         public string Method { get; set; }
 
         [JsonProperty("params")]
-        public RequestParams<TData> Params { get; set; }
+        public RequestParams<TParamsData, TParamsDataAttr> Params { get; set; }
 
         private double? _version;
 

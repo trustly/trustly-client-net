@@ -3,7 +3,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Notifications
 {
-    public class CreditNotificationData : AbstractCreditDebitPendingNotificationData
+    public class CreditNotificationData : AbstractCreditDebitPendingPayoutNotificationData
     {
     }
 }

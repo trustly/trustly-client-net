@@ -3,8 +3,6 @@ using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using Trustly.Api.Domain.Requests.Data;
-using Trustly.Client;
 using WireMock.Server;
 using WireMock.Settings;
 
@@ -31,7 +29,7 @@ namespace Client.Tests
         [Test]
         public async void Test1()
         {
-
+            /*
             var client = new HttpClient();
 
             var depositData = new DepositRequestData
@@ -51,13 +49,7 @@ namespace Client.Tests
             var response = await client.PostAsync("http://localhost:5001", requestContent);
 
             var i = 0;
-
-
-            //var client = new DefaultClient();
-
-            //NUnit.Framework.Assert.AreEqual("A Name-post", client.GetResponse());
-
-            // TODO: Check response
+            */
         }
     }
 }

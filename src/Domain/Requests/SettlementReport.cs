@@ -62,17 +62,17 @@ namespace Trustly.Api.Domain.Requests
         /// <summary>
         /// MessageID of the order associated with the transaction, if available.
         /// </summary>
-        public string Messageid { get; set; }
+        public string MessageID { get; set; }
 
         /// <summary>
         /// OrderID of the order associated with the transaction, if available.
         /// </summary>
-        public string Orderid { get; set; }
+        public string OrderID { get; set; }
 
         /// <summary>
         /// The type of the order associated with the transaction, if available.Text See list of possible orderypes in the table below.
         /// </summary>
-        public string Ordertype { get; set; }
+        public string OrderType { get; set; }
 
         /// <summary>
         /// The sum of all amounts of the respective currency within the report.

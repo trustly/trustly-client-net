@@ -26,27 +26,7 @@ namespace Trustly.Api.Domain.Notifications
     /// If that happens, Trustly will send a credit notification to the merchant’s NotificationURL.
     /// This can happen for example if the funds are sent to a bank account that is closed.
     /// </remarks>
-    public class PayoutConfirmationNotificationData : AbstractCreditDebitPendingNotificationData
+    public class PayoutConfirmationNotificationData : AbstractCreditDebitPendingPayoutNotificationData
     {
-        [JsonProperty("amount")]
-        public string Amount { get; set; }
-
-        [JsonProperty("currency")]
-        public string Currency { get; set; }
-
-        [JsonProperty("messageid")]
-        public string MessageID { get; set; }
-
-        [JsonProperty("orderid")]
-        public string OrderID { get; set; }
-
-        [JsonProperty("enduserid")]
-        public string EnduserID { get; set; }
-
-        [JsonProperty("notificationid")]
-        public string NotificationID { get; set; }
-
-        [JsonProperty("timestamp")]
-        public string Timestamp { get; set; }
     }
 }
