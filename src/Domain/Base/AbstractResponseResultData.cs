@@ -4,7 +4,12 @@ using Newtonsoft.Json;
 
 namespace Trustly.Api.Domain.Base
 {
-    public abstract class AbstractResponseResultData
+    public interface IResponseResultData : IData
+    {
+        Dictionary<string, object> ExtensionData { get; set; }
+    }
+
+    public abstract class AbstractResponseResultData : IResponseResultData
     {
         [JsonExtensionData]
         public Dictionary<string, object> ExtensionData { get; set; }

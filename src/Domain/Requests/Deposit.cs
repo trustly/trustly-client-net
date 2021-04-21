@@ -23,10 +23,10 @@ namespace Trustly.Api.Domain.Requests
         public string OrderID { get; set; }
 
         /// <summary>
-        /// 1 if the withdrawal could be approved and 0 otherwise.
+        /// The URL that should be loaded so that the end-user can complete the deposit.
         /// </summary>
-        [JsonProperty("result")]
-        public bool Result { get; set; }
+        [JsonProperty("url")]
+        public string URL { get; set; }
     }
 
     public class DepositRequestDataAttributes : AbstractDepositAndWithdrawDataAttributes
@@ -42,6 +42,7 @@ namespace Trustly.Api.Domain.Requests
         /// <summary>
         /// The currency of the end-user's account in the merchant's system.
         /// </summary>
+        [JsonProperty("Currency", Required = Required.Always)]
         public string Currency { get; set; }
 
         /// <summary>
@@ -49,6 +50,7 @@ namespace Trustly.Api.Domain.Requests
         /// Do not use this attribute in combination with <see cref="AbstractDepositAndWithdrawDataAttributes.SuggestedMinAmount"/> and <see cref="AbstractDepositAndWithdrawDataAttributes.SuggestedMaxAmount"/>..
         /// Only digits. Use dot (.) as decimal separator.
         /// </summary>
+        [JsonProperty("Amount", Required = Required.Always)]
         public string Amount { get; set; }
 
         /// <summary>
@@ -101,7 +103,7 @@ namespace Trustly.Api.Domain.Requests
         /// Set to 1 for Trustly Direct Debit deposits. QuickDeposit should be set set to 1 when the end user attempts a quick deposit,
         /// even if ChargeAccountID is not set. You can read more about QuickDeposits here, under section 1.1 and 1.2.
         /// </summary>
-        public int QuickDeposit { get; set; }
+        public int? QuickDeposit { get; set; }
 
         /// <summary>
         /// The ExternalReference is a reference set by the merchant for any purpose and does not need to be unique for every API call.

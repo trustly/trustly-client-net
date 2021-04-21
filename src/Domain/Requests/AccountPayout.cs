@@ -5,7 +5,7 @@ using Trustly.Api.Domain.Common;
 
 namespace Trustly.Api.Domain.Requests
 {
-    public class AccountPayoutRequestData : AbstractRequestParamsData<AccountPayoutRequestDataAttributes>
+    public class AccountPayoutRequestData : AbstractToTrustlyRequestParamsData<AccountPayoutRequestDataAttributes>
     {
         /// <summary>
         /// The URL to which notifications for this payment should be sent to. This URL should be hard to guess and not contain a ? ("question mark").

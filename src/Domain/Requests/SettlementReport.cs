@@ -5,7 +5,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Requests
 {
-    public class SettlementReportRequestData : AbstractRequestParamsData<SettlementReportRequestDataAttributes>
+    public class SettlementReportRequestData : AbstractToTrustlyRequestParamsData<SettlementReportRequestDataAttributes>
     {
         /// <summary>
         /// If the value is specified (i.e. not "null"), the system will only search for a settlement executed in that particular currency. If unspecified, settlements executed in any currency are included in the report.

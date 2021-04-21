@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     <PackageReference Include="WireMock.Net" Version="1.4.9" />
     <PackageReference Include="WireMock.Net.FluentAssertions" Version="1.4.9" />
+    <PackageReference Include="VaultSharp" Version="1.6.2.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -54,15 +55,25 @@
     <Folder Include="Resources\Packets\" />
     <Folder Include="Resources\Wiremock\" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Remove="Resources\Packets\credit_ok.json" />
-    <None Remove="Resources\Packets\gluepay_notification.json" />
-    <None Remove="Resources\Packets\gluepay_notification_additional_attribute.json" />
-    <None Remove="Resources\Packets\gluepay_notification_local_api_test.json" />
-    <None Remove="Resources\Packets\gluepay_notification_test.json" />
-    <None Remove="Resources\Packets\gluepay_retry_immediately.json" />
-    <None Remove="Resources\Packets\gluepay_stop.json" />
-    <None Remove="Resources\Packets\glupay_notification_and_retry_immediately.json" />
-    <None Remove="Resources\Packets\verification_ok.json" />
+    <None Remove="Keys\merchant_public_key.cer" />
+    <None Remove="Keys\merchant_private_key.cer" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Keys\merchant_private_key.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\merchant_public_key.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Keys\merchant_public_key.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Keys\merchant_private_key.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

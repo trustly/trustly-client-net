@@ -4,7 +4,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Requests
 {
-    public class RefundRequestData : AbstractRequestParamsData<RefundRequestDataAttributes>
+    public class RefundRequestData : AbstractToTrustlyRequestParamsData<RefundRequestDataAttributes>
     {
         public string OrderID { get; set; }
 

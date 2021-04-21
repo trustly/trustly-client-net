@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using Trustly.Api.Domain.Requests;
@@ -12,6 +14,7 @@ namespace Trustly.Api.Client
         private delegate void Mapper(SettlementReportResponseDataRow row, string value);
 
         private readonly static Mapper NOOP_MAPPER = (row, value) => { };
+        private readonly static Regex EXP_CSV_VALUE = new Regex("(?:^|,)(?=[^\"]| (\")?)\" ? ((? (1)[^\"]*|[^,\"] *))\"?(?=,|$)", RegexOptions.Compiled | RegexOptions.Singleline);
 
         private readonly Dictionary<string, Mapper> _mappers = new();
 
@@ -26,6 +29,7 @@ namespace Trustly.Api.Client
             this._mappers.Add("fxpaymentcurrency", (row, value) => row.FxPaymentCurrency = value);
             this._mappers.Add("settlementbankwithdrawalid", (row, value) => row.SettlementBankWithdrawalID = value);
             this._mappers.Add("externalreference", (row, value) => row.ExternalReference = value);
+            this._mappers.Add("extraref", (row, value) => row.ExternalReference = value);
 
             this._mappers.Add("amount", (row, value) =>
             {
@@ -85,10 +89,9 @@ namespace Trustly.Api.Client
             foreach (var header in headers)
             {
                 var lowerCaseHeaderKey = header.ToLower(CultureInfo.InvariantCulture);
-                var mapper = this._mappers?[lowerCaseHeaderKey];
-                if (mapper != null)
+                if (this._mappers.ContainsKey(lowerCaseHeaderKey))
                 {
-                    localMappers.Add(mapper);
+                    localMappers.Add(this._mappers?[lowerCaseHeaderKey]);
                 }
                 else
                 {
@@ -103,13 +106,25 @@ namespace Trustly.Api.Client
             for (var i = 1; i < lines.Length; i++)
             {
                 var line = lines[i];
-                var columns = Regex.Split(line, "\"?\\s*,\\s*\"?");
 
-                var row = new SettlementReportResponseDataRow();
+                var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(new StringReader(line));
+                parser.HasFieldsEnclosedInQuotes = true;
+                parser.SetDelimiters(",");
 
-                for (var columnIndex = 0; columnIndex < columns.Length; columnIndex++)
+                while (!parser.EndOfData)
                 {
-                    localMappers[columnIndex](row, columns[columnIndex]);
+                    var fields = parser.ReadFields();
+
+                    var row = new SettlementReportResponseDataRow();
+                    for (var columnIndex = 0; columnIndex < fields.Length; columnIndex++)
+                    {
+                        if (string.IsNullOrEmpty(fields[columnIndex]) == false)
+                        {
+                            localMappers[columnIndex](row, fields[columnIndex]);
+                        }
+                    }
+
+                    rows.Add(row);
                 }
             }
 

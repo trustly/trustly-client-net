@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 namespace Trustly.Api.Domain.Base
 {
     public class JsonRpcResponse<TData>
-        where TData : AbstractResponseResultData
+        where TData : IResponseResultData
     {
         [JsonProperty("version")]
         public string Version { get; set; }
@@ -23,6 +23,16 @@ namespace Trustly.Api.Domain.Base
         public string GetUUID()
         {
             return IsSuccessfulResult() ? Result?.UUID : Error?.Error?.UUID;
+        }
+
+        public IData GetData()
+        {
+            return IsSuccessfulResult() ? Result.Data : Error?.Error?.Data;
+        }
+
+        public string GetMethod()
+        {
+            return IsSuccessfulResult() ? Result?.Method : Error?.Error?.Method;
         }
 
         public string GetSignature()

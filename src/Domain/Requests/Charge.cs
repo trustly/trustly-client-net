@@ -5,7 +5,7 @@ using Trustly.Api.Domain.Common;
 
 namespace Trustly.Api.Domain.Requests
 {
-    public class ChargeRequestData : AbstractRequestParamsData<ChargeRequestDataAttributes>
+    public class ChargeRequestData : AbstractToTrustlyRequestParamsData<ChargeRequestDataAttributes>
     {
         /// <summary>
         /// The AccountID received from an account notification which shall be charged.

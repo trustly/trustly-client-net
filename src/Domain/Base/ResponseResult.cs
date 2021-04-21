@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 namespace Trustly.Api.Domain.Base
 {
     public class ResponseResult<TData>
-        where TData : AbstractResponseResultData
+        where TData : IResponseResultData
     {
         [JsonProperty("signature")]
         public string Signature { get; set; }

@@ -5,7 +5,7 @@ using Trustly.Api.Domain.Common;
 
 namespace Trustly.Api.Domain.Requests
 {
-    public class WithdrawRequestData : AbstractRequestParamsData<WithdrawRequestDataAttributes>
+    public class WithdrawRequestData : AbstractToTrustlyRequestParamsData<WithdrawRequestDataAttributes>
     {
         /// <summary>
         /// The URL to which notifications for this payment should be sent to. This URL should be hard to guess and not contain a ? ("question mark").

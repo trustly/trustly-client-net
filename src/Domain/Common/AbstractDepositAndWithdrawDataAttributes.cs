@@ -1,4 +1,7 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Common
@@ -8,26 +11,32 @@ namespace Trustly.Api.Domain.Common
         /// <summary>
         /// The end-user's first name.
         /// </summary>
+        [Required]
         public string Firstname { get; set; }
 
         /// <summary>
         /// The end-user's last name.
         /// </summary>
+        [Required]
         public string Lastname { get; set; }
 
         /// <summary>
         /// The ISO 3166-1-alpha-2 code of the end-user's country. This will be used for pre-selecting the country for the end-user in the iframe. Note: This will only have an effect for new end-users.If an end-user has done a previous order(with the same EndUserID), the country that was last used will be pre-selected.
         /// </summary>
+        [Required]
         public string Country { get; set; }
 
         /// <summary>
         /// The end-users localization preference in the format[language[_territory]]. Language is the ISO 639-1 code and territory the ISO 3166-1-alpha-2 code.
         /// </summary>
+        [Required]
         public string Locale { get; set; }
 
         /// <summary>
         /// The text to show on the end-user's bank statement after Trustly's own 10 digit reference(which always will be displayed first). The reference must let the end user identify the merchant based on this value.So the ShopperStatement should contain either your brand name, website name, or company name.
         /// </summary>
+        //[Required(ErrorMessage ="The ShopperStatement is required")]
+        [JsonProperty("ShopperStatement", Required = Required.Always)]
         public string ShopperStatement { get; set; }
 
         /// <summary>
@@ -92,5 +101,15 @@ namespace Trustly.Api.Domain.Common
         /// If you are using Trustly from within your native iOS app, this attribute should be sent so that we can redirect the users back to your app in case an external app is used for authentication (for example Mobile Bank ID in Sweden).
         /// </summary>
         public string URLScheme { get; set; }
+
+        [OnError]
+        internal void OnError(System.Runtime.Serialization.StreamingContext context, ErrorContext errorContext)
+        {
+            // specify that the error has been handled
+            //errorContext.Handled = true;
+
+            var i = 0;
+            // handle here, throw an exception or ...
+        }
     }
 }

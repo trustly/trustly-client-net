@@ -11,5 +11,30 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.8.10" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Keys\" />
+    <Folder Include="Validation\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Keys\trustly_live_key.cer" />
+    <None Remove="Keys\trustly_test_key.cer" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Keys\trustly_live_key.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Keys\trustly_test_key.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Keys\trustly_live_key.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Keys\trustly_test_key.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

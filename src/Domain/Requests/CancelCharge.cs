@@ -4,7 +4,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Requests
 {
-    public class CancelChargeRequestData : AbstractRequestParamsData<EmptyRequestParamsDataAttributes>
+    public class CancelChargeRequestData : AbstractToTrustlyRequestParamsData<EmptyRequestParamsDataAttributes>
     {
         /// <summary>
         /// The OrderID of the Charge request that should be canceled.

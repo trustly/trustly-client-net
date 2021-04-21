@@ -4,7 +4,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Requests
 {
-    public class ApproveWithdrawalRequestData : AbstractRequestParamsData<EmptyRequestParamsDataAttributes>
+    public class ApproveWithdrawalRequestData : AbstractToTrustlyRequestParamsData<EmptyRequestParamsDataAttributes>
     {
         public uint OrderID { get; set; }
     }
