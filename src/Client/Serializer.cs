@@ -14,12 +14,12 @@ namespace Trustly.Api.Client
         {
             var settings = new JsonSerializerSettings
             {
-                //NullValueHandling = NullValueHandling.Ignore
+                NullValueHandling = NullValueHandling.Ignore
             };
 
             var jsonString = JsonConvert.SerializeObject(data, settings);
 
-            var jsonObject = JObject.Parse(jsonString);
+            var jsonObject = JToken.Parse(jsonString);
             var sb = new StringBuilder();
 
             this.SerializeToken(jsonObject, sb);

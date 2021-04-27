@@ -21,15 +21,16 @@ namespace Trustly.Api.Domain.Requests
     {
         public override GetWithdrawalsResponseData ReadJson(JsonReader reader, Type objectType, GetWithdrawalsResponseData existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
+            var jarray = JToken.Load(reader);
             return new GetWithdrawalsResponseData
             {
-                Entries = JObject.Load(reader).ToObject<List<GetWithdrawalsResponseDataEntry>>()
+                Entries = jarray.ToObject<List<GetWithdrawalsResponseDataEntry>>()
             };
         }
 
         public override void WriteJson(JsonWriter writer, GetWithdrawalsResponseData value, JsonSerializer serializer)
         {
-            JObject.FromObject(value.Entries).WriteTo(writer);
+            JToken.FromObject(value.Entries).WriteTo(writer);
         }
     }
 

@@ -20,15 +20,16 @@ namespace Trustly.Api.Domain.Requests
     {
         public override BalanceResponseData ReadJson(JsonReader reader, Type objectType, BalanceResponseData existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
+            var jarray = JToken.Load(reader);
             return new BalanceResponseData
             {
-                Entries = JObject.Load(reader).ToObject<List<BalanceResponseDataEntry>>()
+                Entries = jarray.ToObject<List<BalanceResponseDataEntry>>()
             };
         }
 
         public override void WriteJson(JsonWriter writer, BalanceResponseData value, JsonSerializer serializer)
         {
-            JObject.FromObject(value.Entries).WriteTo(writer);
+            JToken.FromObject(value.Entries).WriteTo(writer);
         }
     }
 

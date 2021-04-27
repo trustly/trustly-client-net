@@ -1,6 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 using Trustly.Api.Domain.Base;
+using Trustly.Api.Domain.Common;
 
 namespace Trustly.Api.Domain.Requests
 {
@@ -22,6 +23,7 @@ namespace Trustly.Api.Domain.Requests
         /// If the refund request is not accepted, you will get an error code back in the <see cref="JsonRpcResponse{TData}.Error"/>
         /// </summary>
         [JsonProperty("result")]
-        public long Result { get; set; }
+        [JsonConverter(typeof(StringBooleanJsonConverter))]
+        public bool Result { get; set; }
     }
 }

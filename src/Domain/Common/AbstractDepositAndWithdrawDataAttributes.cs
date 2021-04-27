@@ -35,8 +35,7 @@ namespace Trustly.Api.Domain.Common
         /// <summary>
         /// The text to show on the end-user's bank statement after Trustly's own 10 digit reference(which always will be displayed first). The reference must let the end user identify the merchant based on this value.So the ShopperStatement should contain either your brand name, website name, or company name.
         /// </summary>
-        //[Required(ErrorMessage ="The ShopperStatement is required")]
-        [JsonProperty("ShopperStatement", Required = Required.Always)]
+        [Required(ErrorMessage = "The ShopperStatement is required")]
         public string ShopperStatement { get; set; }
 
         /// <summary>

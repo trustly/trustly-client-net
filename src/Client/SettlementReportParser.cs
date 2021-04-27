@@ -11,7 +11,7 @@ namespace Trustly.Api.Client
 {
     public class SettlementReportParser
     {
-        private delegate void Mapper(SettlementReportResponseDataRow row, string value);
+        private delegate void Mapper(SettlementReportResponseDataEntry row, string value);
 
         private readonly static Mapper NOOP_MAPPER = (row, value) => { };
         private readonly static Regex EXP_CSV_VALUE = new Regex("(?:^|,)(?=[^\"]| (\")?)\" ? ((? (1)[^\"]*|[^,\"] *))\"?(?=,|$)", RegexOptions.Compiled | RegexOptions.Singleline);
@@ -72,11 +72,11 @@ namespace Trustly.Api.Client
             });
         }
 
-        public List<SettlementReportResponseDataRow> Parse(string csv)
+        public List<SettlementReportResponseDataEntry> Parse(string csv)
         {
 
             var lines = csv.Replace("\r", "").Split('\n');
-            var rows = new List<SettlementReportResponseDataRow>();
+            var rows = new List<SettlementReportResponseDataEntry>();
 
             if (lines.Length == 0)
             {
@@ -115,7 +115,7 @@ namespace Trustly.Api.Client
                 {
                     var fields = parser.ReadFields();
 
-                    var row = new SettlementReportResponseDataRow();
+                    var row = new SettlementReportResponseDataEntry();
                     for (var columnIndex = 0; columnIndex < fields.Length; columnIndex++)
                     {
                         if (string.IsNullOrEmpty(fields[columnIndex]) == false)

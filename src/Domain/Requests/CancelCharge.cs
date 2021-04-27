@@ -1,6 +1,8 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 using Trustly.Api.Domain.Base;
+using Trustly.Api.Domain.Common;
 
 namespace Trustly.Api.Domain.Requests
 {
@@ -9,15 +11,17 @@ namespace Trustly.Api.Domain.Requests
         /// <summary>
         /// The OrderID of the Charge request that should be canceled.
         /// </summary>
+        [Required]
         public string OrderId { get; set; }
     }
 
     public class CancelChargeResponseData : AbstractResponseResultData
     {
         /// <summary>
-        /// 1 if the Charge could be canceled, and 0 otherwise.
+        /// "1" if the Charge could be canceled, and "0" otherwise.
         /// </summary>
         [JsonProperty("result")]
+        [JsonConverter(typeof(StringBooleanJsonConverter))]
         public bool Result { get; set; }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 using Trustly.Api.Domain.Base;
 using Trustly.Api.Domain.Common;
@@ -10,11 +11,13 @@ namespace Trustly.Api.Domain.Requests
         /// <summary>
         /// The AccountID received from an account notification which shall be charged.
         /// </summary>
+        [Required]
         public string AccountID { get; set; }
 
         /// <summary>
         /// The URL to which notifications for this payment should be sent to.This URL should be hard to guess and not contain a? ("question mark").
         /// </summary>
+        [Required]
         public string NotificationURL { get; set; }
 
         /// <summary>
@@ -22,21 +25,25 @@ namespace Trustly.Api.Domain.Requests
         ///
         /// Preferably the same ID/username as used in the merchant's own backoffice in order to simplify for the merchant's support department.
         /// </summary>
+        [Required]
         public string EndUserID { get; set; }
 
         /// <summary>
         /// Your unique ID for the charge.
         /// </summary>
+        [Required]
         public string MessageID { get; set; }
 
         /// <summary>
         /// The amount to charge with exactly two decimals.Only digits. Use dot (.) as decimal separator.
         /// </summary>
+        [Required]
         public string Amount { get; set; }
 
         /// <summary>
         /// The currency of the amount to charge.
         /// </summary>
+        [Required]
         public string Currency { get; set; }
     }
 
@@ -46,6 +53,7 @@ namespace Trustly.Api.Domain.Requests
         /// 1 if the charge was accepted for processing, 0 otherwise. Note that this is an acceptance of the order, no money has been charged from the account until you receive notifications thereof.
         /// </summary>
         [JsonProperty("result")]
+        [JsonConverter(typeof(StringBooleanJsonConverter))]
         public bool Result { get; set; }
 
         /// <summary>
@@ -79,11 +87,13 @@ namespace Trustly.Api.Domain.Requests
         /// <example>
         /// Shopperstatement: "Sport Shop". Will result in "T Sport S xyz" in bank statement and "Sport Shop" in e-mails.
         /// </example>
+        [Required]
         public string ShopperStatement { get; set; }
 
         /// <summary>
         /// The email address of the end user.
         /// </summary>
+        [Required]
         public string Email { get; set; }
 
         /// <summary>

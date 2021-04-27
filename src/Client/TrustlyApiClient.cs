@@ -102,7 +102,7 @@ namespace Trustly.Api.Client
 
             var parser = new SettlementReportParser();
             var entries = parser.Parse(response.CsvContent);
-            response.Rows = entries;
+            response.Entries = entries;
 
             return response;
         }
@@ -135,7 +135,6 @@ namespace Trustly.Api.Client
             });
 
             var responseString = NewHttpPost(requestString);
-
             var rpcResponse = JsonConvert.DeserializeObject<JsonRpcResponse<TRespData>>(responseString);
 
             if (!this._signer.Verify(rpcResponse))

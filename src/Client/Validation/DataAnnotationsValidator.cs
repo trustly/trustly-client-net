@@ -7,77 +7,57 @@ using System.Reflection;
 
 namespace Trustly.Api.Client.Validation
 {
-    public class DataAnnotationsValidator : IDataAnnotationsValidator
+    public class DataAnnotationsValidator
     {
-        public bool TryValidateObject(object obj, ICollection<ValidationResult> results, IDictionary<object, object> validationContextItems = null)
+        private static readonly ICollection<ValidationResult> EMPTY_VALIDATION_RESULTS = new List<ValidationResult>().AsReadOnly();
+
+        public ICollection<ValidationResult> TryValidateObjectRecursive<T>(T obj)
         {
-            return Validator.TryValidateObject(obj, new ValidationContext(obj, null, validationContextItems), results, true);
+            return TryValidateObjectRecursive(obj, new HashSet<object>());
         }
 
-        public bool TryValidateObjectRecursive<T>(T obj, List<ValidationResult> results, IDictionary<object, object> validationContextItems = null)
+        private ICollection<ValidationResult> TryValidateObjectRecursive<T>(T obj, ISet<object> validatedObjects)
         {
-            return TryValidateObjectRecursive(obj, results, new HashSet<object>(), validationContextItems);
-        }
-
-        private bool TryValidateObjectRecursive<T>(T obj, List<ValidationResult> results, ISet<object> validatedObjects, IDictionary<object, object> validationContextItems = null)
-        {
-            // Short-circuit to avoid infinit loops on cyclical object graphs
-            if (validatedObjects.Contains(obj))
+            // We never validate null values, or the same value more than once.
+            if (obj == null || validatedObjects.Contains(obj))
             {
-                return true;
+                return EMPTY_VALIDATION_RESULTS;
             }
 
             validatedObjects.Add(obj);
-            bool result = TryValidateObject(obj, results, validationContextItems);
+            var list = new List<ValidationResult>();
+            var result = Validator.TryValidateObject(obj, new ValidationContext(obj, null), list, true);
 
-            var properties = obj.GetType().GetProperties().Where(prop => prop.CanRead
-                && !prop.GetCustomAttributes(typeof(SkipRecursiveValidation), false).Any()
-                && prop.GetIndexParameters().Length == 0).ToList();
-
-            foreach (var property in properties)
+            foreach (var property in obj.GetType().GetProperties().Where(this.IsSupportedProperty))
             {
                 if (property.PropertyType == typeof(string) || property.PropertyType.IsValueType) continue;
 
-                var value = obj.GetPropertyValue(property.Name);
-
-                if (value == null) continue;
-
-                var asEnumerable = value as IEnumerable;
-                if (asEnumerable != null)
+                var value = property.GetValue(obj, null);
+                if (value is IEnumerable asEnumerable)
                 {
-                    foreach (var enumObj in asEnumerable)
+                    foreach (var v in asEnumerable)
                     {
-                        if (enumObj != null)
-                        {
-                            var nestedResults = new List<ValidationResult>();
-                            if (!TryValidateObjectRecursive(enumObj, nestedResults, validatedObjects, validationContextItems))
-                            {
-                                result = false;
-                                foreach (var validationResult in nestedResults)
-                                {
-                                    PropertyInfo property1 = property;
-                                    results.Add(new ValidationResult(validationResult.ErrorMessage, validationResult.MemberNames.Select(x => property1.Name + '.' + x)));
-                                }
-                            };
-                        }
+                        list.AddRange(this.WrapValidationResults(v, property, validatedObjects));
                     }
                 }
                 else
                 {
-                    var nestedResults = new List<ValidationResult>();
-                    if (!TryValidateObjectRecursive(value, nestedResults, validatedObjects, validationContextItems))
-                    {
-                        result = false;
-                        foreach (var validationResult in nestedResults)
-                        {
-                            PropertyInfo property1 = property;
-                            results.Add(new ValidationResult(validationResult.ErrorMessage, validationResult.MemberNames.Select(x => property1.Name + '.' + x)));
-                        }
-                    };
+                    list.AddRange(this.WrapValidationResults(value, property, validatedObjects));
                 }
             }
 
-            return result;
+            return list;
+        }
+
+        private bool IsSupportedProperty(PropertyInfo prop)
+        {
+            return prop.CanRead && prop.GetIndexParameters().Length == 0;
+        }
+
+        private IEnumerable<ValidationResult> WrapValidationResults(object entry, PropertyInfo property, ISet<object> validatedObjects)
+        {
+            return this.TryValidateObjectRecursive(entry, validatedObjects)
+                        .Select(vr => new ValidationResult(vr.ErrorMessage, vr.MemberNames.Select(x => property.Name + '.' + x)));
         }
     }
 }

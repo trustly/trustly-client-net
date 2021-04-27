@@ -12,11 +12,9 @@ namespace Trustly.Api.Client
         public void Validate(object jsonRpcRequest)
         {
             var validator = new DataAnnotationsValidator();
-            var results = new List<ValidationResult>();
+            var results = validator.TryValidateObjectRecursive(jsonRpcRequest);
 
-            bool isValid = validator.TryValidateObjectRecursive(jsonRpcRequest, results);
-
-            if (!isValid)
+            if (results.Count > 0)
             {
                 throw new TrustlyDataException(string.Join(", ", results.Select(r => r.ErrorMessage)));
             }

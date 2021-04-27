@@ -1,15 +1,29 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 using Trustly.Api.Domain.Base;
+using Trustly.Api.Domain.Common;
 
 namespace Trustly.Api.Domain.Requests
 {
     public class RefundRequestData : AbstractToTrustlyRequestParamsData<RefundRequestDataAttributes>
     {
+        /// <summary>
+        /// The OrderID of the initial deposit.
+        /// </summary>
+        [Required]
         public string OrderID { get; set; }
 
+        /// <summary>
+        /// The amount to refund the customer with exactly two decimals. Only digits. Use dot (.) as decimal separator.
+        /// </summary>
+        [Required]
         public string Amount { get; set; }
 
+        /// <summary>
+        /// The currency of the amount to refund the customer.
+        /// </summary>
+        [Required]
         public string Currency { get; set; }
     }
 
@@ -17,7 +31,7 @@ namespace Trustly.Api.Domain.Requests
     {
         /// <summary>
         /// The OrderID specified when calling the method.
-        /// </summary>
+        /// </summary>]
         [JsonProperty("orderid")]
         public long OrderID { get; set; }
 
@@ -26,7 +40,8 @@ namespace Trustly.Api.Domain.Requests
         /// If the refund request is not accepted, you will get an error code back in the <see cref="JsonRpcResponse{TData}.Error"/>
         /// </summary>
         [JsonProperty("result")]
-        public long Result { get; set; }
+        [JsonConverter(typeof(StringBooleanJsonConverter))]
+        public bool Result { get; set; }
     }
 
     public class RefundRequestDataAttributes : AbstractRequestParamsDataAttributes

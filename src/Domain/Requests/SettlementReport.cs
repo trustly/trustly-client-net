@@ -33,10 +33,11 @@ namespace Trustly.Api.Domain.Requests
         [JsonProperty("view_automatic_settlement_details")]
         public string CsvContent { get; set; }
 
-        public List<SettlementReportResponseDataRow> Rows { get; set; }
+        [JsonIgnore]
+        public List<SettlementReportResponseDataEntry> Entries { get; set; }
     }
 
-    public class SettlementReportResponseDataRow
+    public class SettlementReportResponseDataEntry
     {
         /// <summary>
         /// The account the money was transferred from(if the amount is positive), or the account the money was transferred to(if the amount is negative).

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 using Trustly.Api.Domain.Base;
+using Trustly.Api.Domain.Common;
 
 namespace Trustly.Api.Domain.Requests
 {
@@ -14,6 +16,7 @@ namespace Trustly.Api.Domain.Requests
         /// <summary>
         /// The OrderID specified when calling the method.
         /// </summary>
+        [Required]
         [JsonProperty("orderid")]
         public long OrderID { get; set; }
 
@@ -21,6 +24,7 @@ namespace Trustly.Api.Domain.Requests
         /// 1 if the withdrawal could be approved and 0 otherwise.
         /// </summary>
         [JsonProperty("result")]
+        [JsonConverter(typeof(StringBooleanJsonConverter))]
         public bool Result { get; set; }
     }
 }
