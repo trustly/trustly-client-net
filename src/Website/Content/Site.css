@@ -1,0 +1,36 @@
+﻿body {
+    padding-top: 20px;
+    padding-bottom: 20px;
+    font-family: Verdana, Geneva, sans-serif
+}
+
+/* Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 280px;
+}
+
+.button {
+    padding:10px;
+    background: #5EB9EB; /* For browsers that do not support gradients */
+    background: -webkit-linear-gradient(#5EB9EB, #C4EAFF); /* For Safari 5.1 to 6.0 */
+    background: -o-linear-gradient(#5EB9EB, #C4EAFF); /* For Opera 11.1 to 12.0 */
+    background: -moz-linear-gradient(#5EB9EB, #C4EAFF); /* For Firefox 3.6 to 15 */
+    background: linear-gradient(#5EB9EB, #C4EAFF); /* Standard syntax */
+    border: 1px solid #5EB9EB;
+    border-radius: 5px;
+    display: inline-block;
+    text-decoration: none;
+    color: black;
+}
+
+.iframe {
+    border: none !important;
+}

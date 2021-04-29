@@ -1,0 +1,8 @@
+﻿@{
+    ViewBag.Title = "Web API Test";
+}
+
+<h2>Web API Test</h2>
+
+@Html.ActionLink("Deposit 100", "Index", "Deposit", new { amount = "100.00" }, new { @class = "button" })<br />
+@Html.ActionLink("Deposit Unknown sum", "Index", "Deposit", new { }, new { @class = "button" })

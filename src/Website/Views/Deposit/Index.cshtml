@@ -1,0 +1,10 @@
+﻿@model Trustly.Website.Controllers.DepositViewModel
+@{
+    ViewBag.Title = "Custom Deposit";
+}
+
+@Html.ActionLink("Home", "Index", "Home", null, new { @class = "button" })
+
+<h2>Deposit @Model.Amount in @Model.Currency</h2>
+
+<iframe src="@Model.URL" width="600" height="600" class="iframe"></iframe>

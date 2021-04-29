@@ -15,35 +15,17 @@ namespace Trustly.Api.Client
 {
     public class TrustlyApiClient
     {
-        public static readonly string URL_TEST = "https://test.trustly.com/api/1";
-        public static readonly string URL_PRODUCTION = "https://api.trustly.com/1";
-
-        public static TrustlyApiClient CreateDefaultTestClient(KeyChain keyChain, string username, string password)
-        {
-            return new TrustlyApiClient(URL_TEST, keyChain, username, password);
-        }
-
-        public static TrustlyApiClient CreateDefaultProductionClient(KeyChain keyChain, string username, string password)
-        {
-            return new TrustlyApiClient(URL_PRODUCTION, keyChain, username, password);
-        }
-
-        private readonly string _url;
-
-        private readonly string _username;
-        private readonly string _password;
+        private readonly TrustlyApiClientSettings _settings;
 
         private readonly JsonRpcFactory _objectFactory = new();
         private readonly Serializer serializer = new();
         private readonly JsonRpcSigner _signer;
         private readonly JsonRpcValidator _validator = new();
 
-        public TrustlyApiClient(string url, KeyChain keyChain, string username, string password)
+        public TrustlyApiClient(TrustlyApiClientSettings settings)
         {
-            this._url = url;
-            this._username = username;
-            this._password = password;
-            this._signer = new JsonRpcSigner(serializer, keyChain);
+            this._settings = settings;
+            this._signer = new JsonRpcSigner(serializer, this._settings);
         }
 
         public AccountLedgerResponseData AccountLedger(AccountLedgerRequestData request)
@@ -121,8 +103,8 @@ namespace Trustly.Api.Client
             where TReqData : IToTrustlyRequestParamsData
             where TRespData : IResponseResultData
         {
-            requestData.Username = this._username;
-            requestData.Password = this._password;
+            requestData.Username = this._settings.Username;
+            requestData.Password = this._settings.Password;
 
             var rpcRequest = this._objectFactory.Create(requestData, method);
 
@@ -167,7 +149,7 @@ namespace Trustly.Api.Client
         protected string NewHttpPost(string request)
         {
             var requestBytes = Encoding.UTF8.GetBytes(request);
-            var httpWebRequest = (HttpWebRequest)WebRequest.Create(this._url);
+            var httpWebRequest = (HttpWebRequest)WebRequest.Create(this._settings.URL);
 
             httpWebRequest.ContentType = "application/json";
             httpWebRequest.ContentLength = requestBytes.Length;

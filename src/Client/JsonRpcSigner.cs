@@ -12,12 +12,12 @@ namespace Trustly.Api.Client
         private const string SHA1_WITH_RSA = "SHA1withRSA";
 
         private readonly Serializer _serializer;
-        private readonly KeyChain _keyChain;
+        private readonly TrustlyApiClientSettings _settings;
 
-        public JsonRpcSigner(Serializer serializer, KeyChain keyChain)
+        public JsonRpcSigner(Serializer serializer, TrustlyApiClientSettings settings)
         {
             this._serializer = serializer;
-            this._keyChain = keyChain;
+            this._settings = settings;
         }
 
         public string CreatePlaintext(string serializedData, string method, string uuid)
@@ -32,7 +32,7 @@ namespace Trustly.Api.Client
             var plainText = this.CreatePlaintext(serializedData, request.Method, request.Params.UUID);
 
             var signer = SignerUtilities.GetSigner(SHA1_WITH_RSA);
-            signer.Init(true, this._keyChain.ClientPrivateKey);
+            signer.Init(true, this._settings.ClientPrivateKey);
 
             var plainBytes = Encoding.UTF8.GetBytes(plainText);
             signer.BlockUpdate(plainBytes, 0, plainBytes.Length);
@@ -65,7 +65,7 @@ namespace Trustly.Api.Client
             var expectedSignatureBytes = Convert.FromBase64String(expectedSignature);
 
             var signer = SignerUtilities.GetSigner(SHA1_WITH_RSA);
-            signer.Init(false, this._keyChain.TrustlyPublicKey);
+            signer.Init(false, this._settings.TrustlyPublicKey);
             signer.BlockUpdate(responseBytes, 0, responseBytes.Length);
 
             return signer.VerifySignature(expectedSignatureBytes);

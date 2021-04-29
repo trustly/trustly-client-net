@@ -13,20 +13,17 @@ namespace Trustly.Api.Domain.UnitTests
             var serializer = new Serializer();
             var factory = new JsonRpcFactory();
             var testAssembly = typeof(JsonRpcSignerTest).Assembly;
-            KeyChain keyChain;
 
+            TrustlyApiClientSettings settings;
             using (var merchantPrivateKey = testAssembly.GetManifestResourceStream("Trustly.Api.Client.UnitTests.Keys.merchant_private_key.cer"))
             {
                 using (var merchantPublicKey = testAssembly.GetManifestResourceStream("Trustly.Api.Client.UnitTests.Keys.merchant_public_key.cer"))
                 {
-                    using (var trustlyKeyStream = KeyChain.GetTrustlyTestKeyStream())
-                    {
-                        keyChain = new KeyChain(merchantPublicKey, merchantPrivateKey, trustlyKeyStream);
-                    }
+                    settings = new TrustlyApiClientSettings(true).WithKeysFromStreams(merchantPublicKey, merchantPrivateKey);
                 }
             }
 
-            var signer = new JsonRpcSigner(serializer, keyChain);
+            var signer = new JsonRpcSigner(serializer, settings);
 
             var requestData = new DepositRequestData
             {

@@ -20,36 +20,7 @@ namespace Client.Tests
         [SetUp]
         public void SetUp()
         {
-            var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-            var publicKeyPath = Path.Combine(homePath, "client_test_public.pem");
-            var privateKeyPath = Path.Combine(homePath, "client_test_private.pem");
-            var usernamePath = Path.Combine(homePath, "client_username.txt");
-            var passwordPath = Path.Combine(homePath, "client_password.txt");
-
-            if (new[] { publicKeyPath, privateKeyPath, usernamePath, passwordPath }.Any(path => File.Exists(path) == false))
-            {
-                Console.WriteLine("--- CANNOT RUN ANY TEST REQUESTS AGAINST THE TEST API, SINCE THERE ARE MISSING CREDENTIAL FILES IN YOUR USER'S HOME DIRECTORY");
-                return;
-            }
-
-            KeyChain keyChain;
-            using (var clientPublicStream = new FileStream(publicKeyPath, FileMode.Open, FileAccess.Read))
-            {
-                using (var cientPrivateStream = new FileStream(privateKeyPath, FileMode.Open, FileAccess.Read))
-                {
-                    using (var trustlyKeyStream = KeyChain.GetTrustlyTestKeyStream())
-                    {
-                        keyChain = new KeyChain(clientPublicStream, cientPrivateStream, trustlyKeyStream);
-                    }
-                }
-            }
-
-            this.client = TrustlyApiClient.CreateDefaultTestClient(
-                keyChain,
-                File.ReadAllText(usernamePath).Trim(),
-                File.ReadAllText(passwordPath).Trim()
-            );
+            this.client = new TrustlyApiClient(new TrustlyApiClientSettings(test: true));
         }
 
         [Test]
