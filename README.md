@@ -2,7 +2,7 @@
 
 ## Create Client
 
-You can easily create any instance of the client by instantiating it, given a settings object with different levels of granular options.
+You can easily create any instance of the client by instantiating it, giving a settings object with different levels of granular options.
 
 ```C#
 var client = new TrustlyApiClient(TrustlyApiClientSettings.ForDefaultTest());
@@ -100,9 +100,10 @@ public class Startup
 
 This will register an MVC Core Middleware that listens to HTTP POSTs on context path `/trustly/notifications`.
 
-It will automatically find all instantiated Trustly Api clients and call all of them, if there are multiple ones, until one of them has reported the notification as done by calling `RespondWithOK()` or `RespondWithFailed()` on the event args. If no event listener on a client responds with `OK` nor `Failed` as exception will be thrown. If an unexpected exception is thrown, we will respond with a `Fail` with the exception message attached.
+It will automatically find all instantiated Trustly Api clients and call all of them, if there are multiple ones, until one of them has reported the notification as done by calling `RespondWithOK()` or `RespondWithFailed()` on the event args.
+If no event listener on a client responds with `OK` nor `Failed` an exception will be thrown. If an unexpected exception is thrown, we will respond with a `Fail` with the exception message attached.
 
-For this to work you *MUST* keep a non-garbage-collected instantiation of the API Client in memory somewhere in your code.
+*NOTE*: For this to work you *MUST* keep a non-garbage-collected instantiation of the API Client in memory somewhere in your code.
 You cannot create an API Client, do a request, and then dispose of the client. It must be kept in memory to be able to receive the middleware request's notification sent asynchronously from Trustly's server.
 
 ---
