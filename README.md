@@ -108,9 +108,9 @@ You cannot create an API Client, do a request, and then dispose of the client. I
 
 ---
 
-2. Manually, by calling on `client.HandleNotificationFromRequest(HttpRequest request)`.
+2. Or Manually, by calling on `client.HandleNotificationFromRequest(HttpRequest request)`.
 
 ---
 
-3. Manually, by calling on `client.HandleNotificationFromString(String json)`.
+3. Or Manually, by calling on `client.HandleNotificationFromString(String json)`.
 
