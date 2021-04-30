@@ -10,7 +10,13 @@ namespace Trustly.Website.Controllers
 
         public AbstractBaseController()
         {
-            this.Client = new TrustlyApiClient(new TrustlyApiClientSettings(test: true));
+            this.Client = new TrustlyApiClient(TrustlyApiClientSettings.ForDefaultTest());
+
+            this.Client = new TrustlyApiClient(TrustlyApiClientSettings
+                .ForTest()
+                .WithCredentialsFromUserHome()
+                .WithCertificatesFromUserHome()
+                .AndTrustlyCertificate());
         }
     }
 }

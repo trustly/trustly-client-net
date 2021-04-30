@@ -65,57 +65,57 @@ namespace Trustly.Api.Client
             return _staticRegisteredClients;
         }
 
-        public AccountLedgerResponseData AccountLedger(AccountLedgerRequestData request)
+        public AccountLedgerResponseData AccountLedger(AccountLedgerRequestData request, string uuid = null)
         {
             return this.SendRequest<AccountLedgerRequestData, AccountLedgerResponseData>(request, "AccountLedger");
         }
 
-        public AccountPayoutResponseData AccountPayout(AccountPayoutRequestData request)
+        public AccountPayoutResponseData AccountPayout(AccountPayoutRequestData request, string uuid = null)
         {
             return this.SendRequest<AccountPayoutRequestData, AccountPayoutResponseData>(request, "AccountPayout");
         }
 
-        public ApproveWithdrawalResponseData ApproveWithdrawal(ApproveWithdrawalRequestData request)
+        public ApproveWithdrawalResponseData ApproveWithdrawal(ApproveWithdrawalRequestData request, string uuid = null)
         {
             return this.SendRequest<ApproveWithdrawalRequestData, ApproveWithdrawalResponseData>(request, "ApproveWithdrawal");
         }
 
-        public BalanceResponseData Balance(BalanceRequestData request)
+        public BalanceResponseData Balance(BalanceRequestData request, string uuid = null)
         {
             return this.SendRequest<BalanceRequestData, BalanceResponseData>(request, "Balance");
         }
 
-        public CancelChargeResponseData CancelCharge(CancelChargeRequestData request)
+        public CancelChargeResponseData CancelCharge(CancelChargeRequestData request, string uuid = null)
         {
             return this.SendRequest<CancelChargeRequestData, CancelChargeResponseData>(request, "CancelCharge");
         }
 
-        public ChargeResponseData Charge(ChargeRequestData request)
+        public ChargeResponseData Charge(ChargeRequestData request, string uuid = null)
         {
             return this.SendRequest<ChargeRequestData, ChargeResponseData>(request, "Charge");
         }
 
-        public DenyWithdrawalResponseData DenyWithdrawal(DenyWithdrawalRequestData request)
+        public DenyWithdrawalResponseData DenyWithdrawal(DenyWithdrawalRequestData request, string uuid = null)
         {
             return this.SendRequest<DenyWithdrawalRequestData, DenyWithdrawalResponseData>(request, "DenyWithdrawal");
         }
 
-        public DepositResponseData Deposit(DepositRequestData request)
+        public DepositResponseData Deposit(DepositRequestData request, string uuid = null)
         {
             return this.SendRequest<DepositRequestData, DepositResponseData>(request, "Deposit");
         }
 
-        public GetWithdrawalsResponseData GetWithdrawals(GetWithdrawalsRequestData request)
+        public GetWithdrawalsResponseData GetWithdrawals(GetWithdrawalsRequestData request, string uuid = null)
         {
             return this.SendRequest<GetWithdrawalsRequestData, GetWithdrawalsResponseData>(request, "GetWithdrawals");
         }
 
-        public RefundResponseData Refund(RefundRequestData request)
+        public RefundResponseData Refund(RefundRequestData request, string uuid = null)
         {
             return this.SendRequest<RefundRequestData, RefundResponseData>(request, "Refund");
         }
 
-        public SettlementReportResponseData SettlementReport(SettlementReportRequestData request)
+        public SettlementReportResponseData SettlementReport(SettlementReportRequestData request, string uuid = null)
         {
             var response = this.SendRequest<SettlementReportRequestData, SettlementReportResponseData>(request, "ViewAutomaticSettlementDetailsCSV");
 

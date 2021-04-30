@@ -35,6 +35,8 @@ namespace Trustly.Api.Client
                         throw new TrustlyNoNotificationClientException("There are no registered Api Clients listening to notifications");
                     }
 
+                    // Oops, notification response, as callback (ok(), failed())
+
                     // Send back OK in response, since no exception was thrown
                     context.Response.StatusCode = (int)HttpStatusCode.OK;
                 }
