@@ -4,13 +4,13 @@
 
 You can easily create any instance of the client by instantiating it, given a settings object with different levels of granular options.
 
-```
+```C#
 var client = new TrustlyApiClient(TrustlyApiClientSettings.ForDefaultTest());
 ```
 
 This is a shorthand to the more elaborate:
 
-```
+```C#
 var client = new TrustlyApiClient(TrustlyApiClientSettings
                 .ForTest()
                 .WithCredentialsFromUserHome()
@@ -32,7 +32,7 @@ Which can of course be overridden and customized.
 
 A Request is done as simply as:
 
-```
+```C#
 var response = client.Deposit(new Trustly.Api.Domain.Requests.DepositRequestData
 {
     NotificationURL = "https://fake.test.notification.trustly.com",
@@ -69,7 +69,7 @@ All these will end up calling on events available on the client, these are:
 
 You register to these as usual with C# events:
 
-```
+```C#
 client.OnDebit += (sender, args) =>
 {
     System.Console.WriteLine($"{args.Data.Amount} was debited");
@@ -81,7 +81,7 @@ client.OnDebit += (sender, args) =>
 
 1. Automatically, by registering on the MVC Application Builder
 
-```
+```C#
 public class Startup
 {
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
