@@ -14,6 +14,7 @@
     <PackageReference Include="WireMock.Net" Version="1.4.9" />
     <PackageReference Include="WireMock.Net.FluentAssertions" Version="1.4.9" />
     <PackageReference Include="VaultSharp" Version="1.6.2.1" />
+    <PackageReference Include="Moq" Version="4.16.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,6 +60,8 @@
   <ItemGroup>
     <None Remove="Keys\merchant_public_key.cer" />
     <None Remove="Keys\merchant_private_key.cer" />
+    <None Remove="Keys\trustly_local_fake_private.pem" />
+    <None Remove="Keys\trustly_local_fake_public.pem" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Keys\merchant_private_key.cer">
@@ -73,6 +76,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Keys\merchant_private_key.cer">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Keys\trustly_local_fake_private.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Keys\trustly_local_fake_public.pem">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>

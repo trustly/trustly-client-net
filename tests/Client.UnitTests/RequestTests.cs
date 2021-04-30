@@ -1,15 +1,7 @@
 using System;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using Trustly.Api.Client;
 using Trustly.Api.Domain.Exceptions;
-using VaultSharp;
-using VaultSharp.V1.AuthMethods;
-using VaultSharp.V1.AuthMethods.LDAP;
 
 namespace Client.Tests
 {

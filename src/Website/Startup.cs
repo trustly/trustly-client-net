@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Trustly.Api.Client;
 
 namespace Trustly.Website
 {
@@ -28,6 +29,8 @@ namespace Trustly.Website
             }
 
             app.UseRouting();
+
+            app.UseTrustlyNotifications();
 
             app.UseEndpoints(endpoints =>
             {

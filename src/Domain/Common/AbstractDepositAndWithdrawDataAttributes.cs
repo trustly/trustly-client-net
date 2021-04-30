@@ -100,15 +100,5 @@ namespace Trustly.Api.Domain.Common
         /// If you are using Trustly from within your native iOS app, this attribute should be sent so that we can redirect the users back to your app in case an external app is used for authentication (for example Mobile Bank ID in Sweden).
         /// </summary>
         public string URLScheme { get; set; }
-
-        [OnError]
-        internal void OnError(System.Runtime.Serialization.StreamingContext context, ErrorContext errorContext)
-        {
-            // specify that the error has been handled
-            //errorContext.Handled = true;
-
-            var i = 0;
-            // handle here, throw an exception or ...
-        }
     }
 }

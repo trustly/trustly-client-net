@@ -35,7 +35,7 @@ namespace Trustly.Api.Client
         {
             (test ? this.ForTest() : this.ForProduction())
                 .WithCredentials(username, password)
-                .WithKeysFromStreams(clientPublicKeyStream, clientPrivateKeyStream);
+                .WithClientKeysFromStreams(clientPublicKeyStream, clientPrivateKeyStream);
         }
 
         public TrustlyApiClientSettings ForTest()
@@ -52,6 +52,12 @@ namespace Trustly.Api.Client
 
             var clientAssembly = typeof(TrustlyApiClient).Assembly;
             return this.WithTrustlyPublicKeyFromStream(clientAssembly.GetManifestResourceStream("Trustly.Api.Client.Keys.trustly_live_key.cer"));
+        }
+
+        public TrustlyApiClientSettings WithUrl(string url)
+        {
+            this.URL = url;
+            return this;
         }
 
         public TrustlyApiClientSettings WithCredentials(string username, string password)
@@ -78,7 +84,7 @@ namespace Trustly.Api.Client
                 throw new ArgumentException($"Cannot create api settings since password key file {passwordPath} is missing");
 
             return
-                this.WithKeysFromFiles(clientPublicKeyPath, clientPrivateKeyPath)
+                this.WithClientKeysFromFiles(clientPublicKeyPath, clientPrivateKeyPath)
                 .WithCredentials(
                     File.ReadAllText(usernamePath).Trim(),
                     File.ReadAllText(passwordPath).Trim()
@@ -106,18 +112,18 @@ namespace Trustly.Api.Client
             return this.WithSettingsFromFiles(publicKeyPath, privateKeyPath, usernamePath, passwordPath);
         }
 
-        public TrustlyApiClientSettings WithKeysFromFiles(string publicKeyFilePath, string privateKeyFilePath)
+        public TrustlyApiClientSettings WithClientKeysFromFiles(string clientPublicKeyFilePath, string clientPrivateKeyFilePath)
         {
-            using (var publicFileStream = new FileStream(publicKeyFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var publicFileStream = new FileStream(clientPublicKeyFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                using (var privateFileStream = new FileStream(privateKeyFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var privateFileStream = new FileStream(clientPrivateKeyFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    return this.WithKeysFromStreams(publicFileStream, privateFileStream);
+                    return this.WithClientKeysFromStreams(publicFileStream, privateFileStream);
                 }
             }
         }
 
-        public TrustlyApiClientSettings WithKeysFromStreams(Stream clientPublicKeyStream, Stream clientPrivateKeyStream)
+        public TrustlyApiClientSettings WithClientKeysFromStreams(Stream clientPublicKeyStream, Stream clientPrivateKeyStream)
         {
             this.WithClientPublicKeyFromStream(clientPublicKeyStream);
             this.WithClientPrivateKeyFromStream(clientPrivateKeyStream);
