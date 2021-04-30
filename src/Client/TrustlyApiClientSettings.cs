@@ -218,9 +218,12 @@ namespace Trustly.Api.Client
             this.Settings.URL = url;
         }
 
-        internal WithClientCertificates WithoutCredentials()
+        /// <summary>
+        /// For internal use, do not use. You must supply credentials to be able to make requests.
+        /// </summary>
+        public WithCredentials WithoutCredentials()
         {
-            return new WithClientCertificates(this.Settings, null, null);
+            return new WithCredentials(this.Settings, null, null);
         }
 
         public WithCredentials WithCredentials(string username, string password)

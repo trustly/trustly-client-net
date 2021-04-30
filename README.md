@@ -21,10 +21,10 @@ var client = new TrustlyApiClient(TrustlyApiClientSettings
 Which will load client credentials and certificates from the user computer's home directory.
 The default file names are:
 
-* trustly_client_username.txt
-* trustly_client_password.txt
-* trustly_client_public.pem
-* trustly_client_private.pem
+* `trustly_client_username.txt
+* `trustly_client_password.txt`
+* `trustly_client_public.pem`
+* `trustly_client_private.pem`
 
 Which can of course be overridden and customized.
 
@@ -50,6 +50,8 @@ var response = client.Deposit(new Trustly.Api.Domain.Requests.DepositRequestData
         ShopperStatement = "Trustly Test Deposit"
     }
 });
+
+var redirectOrIFrameUrl = response.URL;
 ```
 
 Where the request and reponse types are typesafe and easy to handle. If there ever are properties which are not represented in the model, they will be placed under the `ExtensionData` dictionary properties on the respective object graph levels.
@@ -98,9 +100,16 @@ public class Startup
 
 This will register an MVC Core Middleware that listens to HTTP POSTs on context path `/trustly/notifications`.
 
-It will automatically find all created Trusly clients and call all of them, if there are multiple ones, until one of them has reported the notification as done by calling `RespondWithOK()` or `RespondWithError()` on the event args. If no client has reported, we will automatically respond with *OK* unless an exception has been thrown (and then Report with *Error*).
+It will automatically find all instantiated Trustly Api clients and call all of them, if there are multiple ones, until one of them has reported the notification as done by calling `RespondWithOK()` or `RespondWithError()` on the event args. If no client has reported, we will automatically respond with *OK* unless an exception has been thrown (and then Report with *Error*).
+
+For this to work you *MUST* keep a non-garbage-collected instantiation of the API Client in memory somewhere in your code.
+You cannot create an API Client, do a request, and then dispose of the client. It must be kept in memory to be able to receive the middleware request's notification sent asynchronously from Trustly's server.
+
+---
 
 2. Manually, by calling on `client.HandleNotificationFromRequest(HttpRequest request)`.
+
+---
 
 3. Manually, by calling on `client.HandleNotificationFromString(String json)`.
 

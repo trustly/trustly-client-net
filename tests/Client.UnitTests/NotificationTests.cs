@@ -30,10 +30,11 @@ namespace Client.Tests
                     {
                         // An ugly way to fake as if the "client" is the Trustly server. So we sign the "request" (notification) with Trustly private key.
                         // It is then validated by the same client, with the Trustly public key, as if it is on the other side of the communication.
-                        settings = new TrustlyApiClientSettings()
-                            .WithUrl(TrustlyApiClientSettings.URL_TEST)
-                            .WithClientKeysFromStreams(merchantPublicKey, trustlyPrivateKey)
-                            .WithTrustlyPublicKeyFromStream(trustlyPublicKey);
+                        settings = TrustlyApiClientSettings
+                            .ForTest()
+                            .WithoutCredentials()
+                            .WithCertificatesFromStreams(merchantPublicKey, trustlyPrivateKey)
+                            .AndTrustlyCertificateFromStream(trustlyPublicKey);
                     }
                 }
             }
@@ -57,31 +58,7 @@ namespace Client.Tests
         }
 
         [Test]
-        public void TestNotificationHandlerFromMiddlewareRequestWithoutRegistration()
-        {
-            var receivedDebitNotifications = 0;
-            client.OnDebit += (sender, args) =>
-            {
-                receivedDebitNotifications++;
-            };
-
-            var mockRequest = this.CreateMockDepositNotificationRequest();
-            var mockResponse = new Mock<HttpResponse>();
-            var mockHttpContext = new Mock<HttpContext>();
-
-            mockHttpContext.Setup(x => x.Request).Returns(() => mockRequest.Object);
-            mockHttpContext.Setup(x => x.Response).Returns(() => mockResponse.Object);
-
-            Assert.ThrowsAsync<TrustlyNoNotificationClientException>(async () =>
-            {
-                await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null);
-            });
-
-            Assert.AreEqual(0, receivedDebitNotifications);
-        }
-
-        [Test]
-        public async Task TestNotificationHandlerFromMiddlewareRequestWithRegistration()
+        public async Task TestNotificationHandlerFromMiddlewareRequest()
         {
             var receivedDebitNotifications = 0;
             client.OnDebit += (sender, args) =>
@@ -95,8 +72,6 @@ namespace Client.Tests
 
             mockHttpContext.Setup(x => x.Request).Returns(() => mockRequest.Object);
             mockHttpContext.Setup(x => x.Response).Returns(() => mockResponse.Object);
-
-            client.NotificationRegistration();
 
             await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null);
 
@@ -109,8 +84,6 @@ namespace Client.Tests
             var mockRequest = CreateMockDepositNotificationRequest();
             var mockHttpContext = new Mock<HttpContext>();
             mockHttpContext.Setup(x => x.Request).Returns(() => mockRequest.Object);
-
-            client.NotificationRegistration();
 
             Assert.ThrowsAsync<TrustlyNoNotificationListenerException>(async () =>
             {
@@ -152,11 +125,11 @@ namespace Client.Tests
             {
                 receivedUnknownNotifications++;
 
-                Assert.IsFalse(args.ExtensionData.ContainsKey("Amount"));
-                Assert.IsFalse(args.ExtensionData.ContainsKey("EnduserID"));
+                Assert.IsFalse(args.Data.ExtensionData.ContainsKey("Amount"));
+                Assert.IsFalse(args.Data.ExtensionData.ContainsKey("EnduserID"));
 
-                Assert.AreEqual("100.00", args.ExtensionData["amount"]);
-                Assert.AreEqual("user@email.com", args.ExtensionData["enduserid"]);
+                Assert.AreEqual("100.00", args.Data.ExtensionData["amount"]);
+                Assert.AreEqual("user@email.com", args.Data.ExtensionData["enduserid"]);
             };
 
             var mockRequest = this.CreateMockDepositNotificationRequest(rpcMethod: "blaha");
