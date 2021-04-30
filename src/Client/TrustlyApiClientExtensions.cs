@@ -1,9 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using Trustly.Api.Domain.Exceptions;
+using Trustly.Api.Domain.Notifications;
 
 namespace Trustly.Api.Client
 {
@@ -21,43 +27,63 @@ namespace Trustly.Api.Client
 
             if (string.Equals(contextPath, "trustly/notifications", StringComparison.InvariantCultureIgnoreCase))
             {
-                try
+                var responseCount = 0;
+                var clientCount = 0;
+                foreach (var client in TrustlyApiClient.GetRegisteredClients())
                 {
-                    var handledCount = 0;
-                    foreach (var client in TrustlyApiClient.GetRegisteredClients())
-                    {
-                        client.HandleNotificationFromRequest(request);
-                        handledCount++;
-                    }
-
-                    if (handledCount == 0)
-                    {
-                        throw new TrustlyNoNotificationClientException("There are no registered Api Clients listening to notifications");
-                    }
-
-                    // Oops, notification response, as callback (ok(), failed())
-
-                    // Send back OK in response, since no exception was thrown
-                    context.Response.StatusCode = (int)HttpStatusCode.OK;
+                    clientCount++;
+                    client.HandleNotificationFromRequest(
+                        request,
+                        onOK: (rpcMethod, uuid) =>
+                        {
+                            responseCount++;
+                            Respond(client, context.Response, rpcMethod, uuid, "OK", null, HttpStatusCode.OK);
+                        },
+                        onFailed: (rpcMethod, uuid, message) =>
+                        {
+                            responseCount++;
+                            Respond(client, context.Response, rpcMethod, uuid, "FAILED", message, HttpStatusCode.InternalServerError);
+                        }
+                    );
                 }
-                catch (Exception)
-                {
-                    try
-                    {
-                        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    }
-                    catch (Exception)
-                    {
-                        // Ignore any error thrown here.
-                    }
 
-                    throw;
+                if (clientCount == 0)
+                {
+                    throw new TrustlyNoNotificationClientException("There are no registered Api Clients listening to notifications");
+                }
+
+                if (responseCount == 0)
+                {
+                    throw new TrustlyNoNotificationClientException("None of your client's event listeners responded with OK or FAILED. That must be done.");
                 }
             }
             else
             {
                 await next.Invoke();
             }
+        }
+
+        public static void Respond(TrustlyApiClient client, HttpResponse response, string method, string uuid, string status, string message, HttpStatusCode httpStatusCode)
+        {
+            var rpcResponse = client.CreateResponsePackage(
+                method,
+                uuid,
+                new NotificationResponse
+                {
+                    Status = status,
+                    ExtensionData = new Dictionary<string, object>
+                    {
+                        { "message", message }
+                    }
+                }
+            );
+
+            var rpcString = JsonConvert.SerializeObject(rpcResponse);
+            var rpcBytes = Encoding.UTF8.GetBytes(rpcString);
+            var rpcStream = new MemoryStream(rpcBytes);
+
+            response.Body = rpcStream;
+            response.StatusCode = (int)httpStatusCode;
         }
     }
 }

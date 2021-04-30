@@ -21,7 +21,7 @@ var client = new TrustlyApiClient(TrustlyApiClientSettings
 Which will load client credentials and certificates from the user computer's home directory.
 The default file names are:
 
-* `trustly_client_username.txt
+* `trustly_client_username.txt`
 * `trustly_client_password.txt`
 * `trustly_client_public.pem`
 * `trustly_client_private.pem`
@@ -100,7 +100,7 @@ public class Startup
 
 This will register an MVC Core Middleware that listens to HTTP POSTs on context path `/trustly/notifications`.
 
-It will automatically find all instantiated Trustly Api clients and call all of them, if there are multiple ones, until one of them has reported the notification as done by calling `RespondWithOK()` or `RespondWithError()` on the event args. If no client has reported, we will automatically respond with *OK* unless an exception has been thrown (and then Report with *Error*).
+It will automatically find all instantiated Trustly Api clients and call all of them, if there are multiple ones, until one of them has reported the notification as done by calling `RespondWithOK()` or `RespondWithFailed()` on the event args. If no event listener on a client responds with `OK` nor `Failed` as exception will be thrown. If an unexpected exception is thrown, we will respond with a `Fail` with the exception message attached.
 
 For this to work you *MUST* keep a non-garbage-collected instantiation of the API Client in memory somewhere in your code.
 You cannot create an API Client, do a request, and then dispose of the client. It must be kept in memory to be able to receive the middleware request's notification sent asynchronously from Trustly's server.

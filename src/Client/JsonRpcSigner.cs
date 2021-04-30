@@ -43,8 +43,14 @@ namespace Trustly.Api.Client
             request.Params.Signature = signedString;
         }
 
+        public void Sign<TData>(JsonRpcResponse<TData> response)
+            where TData : IResponseResultData
+        {
+            // TODO: Sign
+        }
+
         public bool Verify<TData>(JsonRpcRequest<TData> request)
-            where TData : IRequestParamsData
+        where TData : IRequestParamsData
         {
             return this.Verify(request.Method, request.Params.UUID, request.Params.Signature, request.Params.Data);
         }

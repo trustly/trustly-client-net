@@ -33,7 +33,7 @@ namespace Trustly.Api.Client
         public event EventHandler<NotificationArgs<PendingNotificationData>> OnPending;
         public event EventHandler<NotificationArgs<UnknownNotificationData>> OnUnknownNotification;
 
-        private readonly Dictionary<string, Action<string, Action, Action>> _methodToNotificationMapper = new();
+        private readonly Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, int>> _methodToNotificationMapper = new();
 
         public TrustlyApiClient(TrustlyApiClientSettings settings)
         {
@@ -69,57 +69,57 @@ namespace Trustly.Api.Client
 
         public AccountLedgerResponseData AccountLedger(AccountLedgerRequestData request, string uuid = null)
         {
-            return this.SendRequest<AccountLedgerRequestData, AccountLedgerResponseData>(request, "AccountLedger");
+            return this.SendRequest<AccountLedgerRequestData, AccountLedgerResponseData>(request, "AccountLedger", uuid);
         }
 
         public AccountPayoutResponseData AccountPayout(AccountPayoutRequestData request, string uuid = null)
         {
-            return this.SendRequest<AccountPayoutRequestData, AccountPayoutResponseData>(request, "AccountPayout");
+            return this.SendRequest<AccountPayoutRequestData, AccountPayoutResponseData>(request, "AccountPayout", uuid);
         }
 
         public ApproveWithdrawalResponseData ApproveWithdrawal(ApproveWithdrawalRequestData request, string uuid = null)
         {
-            return this.SendRequest<ApproveWithdrawalRequestData, ApproveWithdrawalResponseData>(request, "ApproveWithdrawal");
+            return this.SendRequest<ApproveWithdrawalRequestData, ApproveWithdrawalResponseData>(request, "ApproveWithdrawal", uuid);
         }
 
         public BalanceResponseData Balance(BalanceRequestData request, string uuid = null)
         {
-            return this.SendRequest<BalanceRequestData, BalanceResponseData>(request, "Balance");
+            return this.SendRequest<BalanceRequestData, BalanceResponseData>(request, "Balance", uuid);
         }
 
         public CancelChargeResponseData CancelCharge(CancelChargeRequestData request, string uuid = null)
         {
-            return this.SendRequest<CancelChargeRequestData, CancelChargeResponseData>(request, "CancelCharge");
+            return this.SendRequest<CancelChargeRequestData, CancelChargeResponseData>(request, "CancelCharge", uuid);
         }
 
         public ChargeResponseData Charge(ChargeRequestData request, string uuid = null)
         {
-            return this.SendRequest<ChargeRequestData, ChargeResponseData>(request, "Charge");
+            return this.SendRequest<ChargeRequestData, ChargeResponseData>(request, "Charge", uuid);
         }
 
         public DenyWithdrawalResponseData DenyWithdrawal(DenyWithdrawalRequestData request, string uuid = null)
         {
-            return this.SendRequest<DenyWithdrawalRequestData, DenyWithdrawalResponseData>(request, "DenyWithdrawal");
+            return this.SendRequest<DenyWithdrawalRequestData, DenyWithdrawalResponseData>(request, "DenyWithdrawal", uuid);
         }
 
         public DepositResponseData Deposit(DepositRequestData request, string uuid = null)
         {
-            return this.SendRequest<DepositRequestData, DepositResponseData>(request, "Deposit");
+            return this.SendRequest<DepositRequestData, DepositResponseData>(request, "Deposit", uuid);
         }
 
         public GetWithdrawalsResponseData GetWithdrawals(GetWithdrawalsRequestData request, string uuid = null)
         {
-            return this.SendRequest<GetWithdrawalsRequestData, GetWithdrawalsResponseData>(request, "GetWithdrawals");
+            return this.SendRequest<GetWithdrawalsRequestData, GetWithdrawalsResponseData>(request, "GetWithdrawals", uuid);
         }
 
         public RefundResponseData Refund(RefundRequestData request, string uuid = null)
         {
-            return this.SendRequest<RefundRequestData, RefundResponseData>(request, "Refund");
+            return this.SendRequest<RefundRequestData, RefundResponseData>(request, "Refund", uuid);
         }
 
         public SettlementReportResponseData SettlementReport(SettlementReportRequestData request, string uuid = null)
         {
-            var response = this.SendRequest<SettlementReportRequestData, SettlementReportResponseData>(request, "ViewAutomaticSettlementDetailsCSV");
+            var response = this.SendRequest<SettlementReportRequestData, SettlementReportResponseData>(request, "ViewAutomaticSettlementDetailsCSV", uuid);
 
             var parser = new SettlementReportParser();
             var entries = parser.Parse(response.CsvContent);
@@ -142,10 +142,10 @@ namespace Trustly.Api.Client
         /// <param name="requestData">The request data that will be used for the request</param>
         /// <param name="method">The method of the JsonRpc package</param>
         /// <returns>A signed and validated JsonRpc request package</returns>
-        public JsonRpcRequest<TReqData> CreateRequestPackage<TReqData>(string method, TReqData requestData)
+        public JsonRpcRequest<TReqData> CreateRequestPackage<TReqData>(TReqData requestData, string method, string uuid = null)
             where TReqData : IRequestParamsData
         {
-            var rpcRequest = this._objectFactory.Create(requestData, method);
+            var rpcRequest = this._objectFactory.Create(requestData, method, uuid);
 
             this._signer.Sign(rpcRequest);
             this._validator.Validate(rpcRequest);
@@ -154,18 +154,45 @@ namespace Trustly.Api.Client
         }
 
         /// <summary>
+        /// Used internally to create a response package.
+        /// </summary>
+        /// <typeparam name="TResData"></typeparam>
+        /// <returns>A signed and validated JsonRpc response package</returns>
+        public JsonRpcResponse<TResData> CreateResponsePackage<TResData>(string method, string requestUuid, TResData responseData)
+            where TResData : IResponseResultData
+        {
+            var rpcResponse = new JsonRpcResponse<TResData>
+            {
+                Result = new ResponseResult<TResData>
+                {
+                    Method = method,
+                    UUID = requestUuid,
+                    Data = responseData
+                },
+                Version = "1.1"
+            };
+
+            this._signer.Sign(rpcResponse);
+            this._validator.Validate(rpcResponse);
+
+            return rpcResponse;
+        }
+
+        /// <summary>
         /// Sends given request to Trustly.
         /// </summary>
         /// <param name="requestData">Request to send to Trustly API</param>
+        /// <param name="method">The RPC method name of the request</param>
+        /// <param name="uuid">Optional UUID for the request. If not specified, a Guid will be generated</param>
         /// <returns>Response generated from the request</returns>
-        public TRespData SendRequest<TReqData, TRespData>(TReqData requestData, string method)
+        public TRespData SendRequest<TReqData, TRespData>(TReqData requestData, string method, string uuid = null)
             where TReqData : IToTrustlyRequestParamsData
             where TRespData : IResponseResultData
         {
             requestData.Username = this._settings.Username;
             requestData.Password = this._settings.Password;
 
-            var rpcRequest = this.CreateRequestPackage(method, requestData);
+            var rpcRequest = this.CreateRequestPackage(requestData, method);
 
             var requestString = JsonConvert.SerializeObject(rpcRequest, new JsonSerializerSettings
             {
@@ -197,14 +224,14 @@ namespace Trustly.Api.Client
             return rpcResponse.Result.Data;
         }
 
-        public void HandleNotificationFromRequest(HttpRequest request, Action onOK = null, Action onError = null)
+        public int HandleNotificationFromRequest(HttpRequest request, NotificationResponseDelegate onOK = null, NotificationFailResponseDelegate onFailed = null)
         {
             if (string.Equals(request.Method, "post", StringComparison.InvariantCultureIgnoreCase))
             {
                 using (var sr = new StreamReader(request.Body))
                 {
                     var requestStringBody = sr.ReadToEnd();
-                    this.HandleNotificationFromString(requestStringBody, onOK, onError);
+                    return this.HandleNotificationFromString(requestStringBody, onOK, onFailed);
                 }
             }
             else
@@ -213,7 +240,7 @@ namespace Trustly.Api.Client
             }
         }
 
-        public void HandleNotificationFromString(string jsonString, Action onOK = null, Action onError = null)
+        public int HandleNotificationFromString(string jsonString, NotificationResponseDelegate onOK = null, NotificationFailResponseDelegate onFailed = null)
         {
             var jsonToken = JToken.Parse(jsonString);
 
@@ -226,14 +253,14 @@ namespace Trustly.Api.Client
 
             // This will then call generic method HandleNotificationFromString below.
             // We do it this way to keep the dynamic generic parameters intact.
-            mapper(jsonString, onOK, onError);
+            return mapper(jsonString, onOK, onFailed);
         }
 
-        private void HandleNotificationFromString<TReqData>(
+        private int HandleNotificationFromString<TReqData>(
                 string jsonString,
                 EventHandler<NotificationArgs<TReqData>> eventHandler,
-                Action onOK,
-                Action onError
+                NotificationResponseDelegate onOK,
+                NotificationFailResponseDelegate onFailed
             )
             where TReqData : IRequestParamsData
         {
@@ -255,7 +282,16 @@ namespace Trustly.Api.Client
                 throw new TrustlyNoNotificationListenerException($"Received an incoming '{rpcRequest.Method}' notification, but there was no event listener subscribing to it");
             }
 
-            eventHandler(this, new NotificationArgs<TReqData>(rpcRequest.Params.Data, onOK, onError));
+            try
+            {
+                eventHandler(this, new NotificationArgs<TReqData>(rpcRequest.Params.Data, rpcRequest.Method, rpcRequest.Params.UUID, onOK, onFailed));
+            }
+            catch (Exception ex)
+            {
+                onFailed(rpcRequest.Method, rpcRequest.Params.UUID, ex.Message);
+            }
+
+            return eventHandler.GetInvocationList().Length;
         }
 
         /// <summary>

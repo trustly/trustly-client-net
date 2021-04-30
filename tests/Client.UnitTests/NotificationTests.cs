@@ -146,7 +146,6 @@ namespace Client.Tests
             {
                 var json = JsonConvert.SerializeObject(
                     client.CreateRequestPackage(
-                        rpcMethod,
                         new DebitNotificationData
                         {
                             Amount = "100.00",
@@ -156,11 +155,12 @@ namespace Client.Tests
                             OrderID = Guid.NewGuid().ToString(),
                             NotificationID = Guid.NewGuid().ToString(),
                             Timestamp = "2021-01-01 01:01:01"
-                        }
+                        },
+                        rpcMethod
                     )
                 );
 
-                var byteArray = Encoding.ASCII.GetBytes(json);
+                var byteArray = Encoding.UTF8.GetBytes(json);
                 var stream = new MemoryStream(byteArray);
                 stream.Flush();
                 stream.Position = 0;
