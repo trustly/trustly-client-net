@@ -28,8 +28,20 @@ namespace Trustly.Api.Client
         public void Sign<TData>(JsonRpcRequest<TData> request)
             where TData : IRequestParamsData
         {
-            var serializedData = this._serializer.SerializeData(request.Params.Data);
-            var plainText = this.CreatePlaintext(serializedData, request.Method, request.Params.UUID);
+            request.Params.Signature = this.CreateSignature(request.Method, request.Params.UUID, request.Params.Data);
+        }
+
+        public void Sign<TData>(JsonRpcResponse<TData> response)
+            where TData : IResponseResultData
+        {
+            response.Result.Signature = this.CreateSignature(response.GetMethod(), response.GetUUID(), response.GetData());
+        }
+
+        private string CreateSignature<TData>(string method, string uuid, TData data)
+            where TData : IData
+        {
+            var serializedData = this._serializer.SerializeData(data);
+            var plainText = this.CreatePlaintext(serializedData, method, uuid);
 
             var signer = SignerUtilities.GetSigner(SHA1_WITH_RSA);
             signer.Init(true, this._settings.ClientPrivateKey);
@@ -39,14 +51,7 @@ namespace Trustly.Api.Client
 
             var signedBytes = signer.GenerateSignature();
 
-            var signedString = Convert.ToBase64String(signedBytes);
-            request.Params.Signature = signedString;
-        }
-
-        public void Sign<TData>(JsonRpcResponse<TData> response)
-            where TData : IResponseResultData
-        {
-            // TODO: Sign
+            return Convert.ToBase64String(signedBytes);
         }
 
         public bool Verify<TData>(JsonRpcRequest<TData> request)

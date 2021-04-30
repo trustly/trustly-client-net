@@ -108,9 +108,16 @@ You cannot create an API Client, do a request, and then dispose of the client. I
 
 ---
 
-2. Or Manually, by calling on `client.HandleNotificationFromRequest(HttpRequest request)`.
+2. Or Manually, by calling on `client.HandleNotificationFromRequest(HttpRequest request, Callback onOK, Callback onFailed)`.
+
+This will *not* automatically send an `OK` or `Failed` response back to the Trustly server.
+
+Instead you need to subscribe to the `onOK` and `onFailed` callbacks, if you want to use the event args' callback methods.
+
+If you will not use the event args' callback methods, then you do not need to supply these callback arguments, and can respond with a JsonRpc response manually.
 
 ---
 
-3. Or Manually, by calling on `client.HandleNotificationFromString(String json)`.
+3. Or Manually, by calling on `client.HandleNotificationFromString(String json, Callback onOK, Callback onFailed)`.
 
+See #2 for callback comments.
