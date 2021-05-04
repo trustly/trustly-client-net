@@ -19,7 +19,11 @@ namespace Trustly.Api.Domain.UnitTests
             {
                 using (var merchantPublicKey = testAssembly.GetManifestResourceStream("Trustly.Api.Client.UnitTests.Keys.merchant_public_key.cer"))
                 {
-                    settings = new TrustlyApiClientSettings(true).WithClientKeysFromStreams(merchantPublicKey, merchantPrivateKey);
+                    settings = TrustlyApiClientSettings
+                        .ForTest()
+                        .WithCredentialsFromUserHome()
+                        .WithCertificatesFromStreams(merchantPublicKey, merchantPrivateKey)
+                        .AndTrustlyCertificate();
                 }
             }
 

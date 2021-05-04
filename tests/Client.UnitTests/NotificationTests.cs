@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -64,11 +65,14 @@ namespace Client.Tests
             client.OnDebit += (sender, args) =>
             {
                 receivedDebitNotifications++;
+                args.RespondWithOK();
             };
 
             var mockRequest = this.CreateMockDepositNotificationRequest();
             var mockHttpContext = new Mock<HttpContext>();
             var mockResponse = new Mock<HttpResponse>();
+
+            mockResponse.SetupAllProperties();
 
             mockHttpContext.Setup(x => x.Request).Returns(() => mockRequest.Object);
             mockHttpContext.Setup(x => x.Response).Returns(() => mockResponse.Object);
@@ -76,6 +80,39 @@ namespace Client.Tests
             await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null);
 
             Assert.AreEqual(1, receivedDebitNotifications);
+            Assert.AreEqual(200, mockResponse.Object.StatusCode);
+        }
+
+        [Test]
+        public async Task TestNotificationHandlerFromMiddlewareRequestWithErrorResponse()
+        {
+            var receivedDebitNotifications = 0;
+            client.OnDebit += (sender, args) =>
+            {
+                receivedDebitNotifications++;
+                args.RespondWithFailed("Things went badly");
+            };
+
+            var mockRequest = this.CreateMockDepositNotificationRequest();
+            var mockHttpContext = new Mock<HttpContext>();
+            var mockResponse = new Mock<HttpResponse>();
+
+            mockResponse.SetupAllProperties();
+
+            mockHttpContext.Setup(x => x.Request).Returns(() => mockRequest.Object);
+            mockHttpContext.Setup(x => x.Response).Returns(() => mockResponse.Object);
+
+            await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null);
+
+            Assert.AreEqual(1, receivedDebitNotifications);
+            Assert.AreEqual(500, mockResponse.Object.StatusCode);
+
+            using (var sr = new StreamReader(mockResponse.Object.Body))
+            {
+                var bodyString = sr.ReadToEnd();
+
+                Assert.IsTrue(bodyString.Contains("Things went badly"));
+            }
         }
 
         [Test]
@@ -83,7 +120,12 @@ namespace Client.Tests
         {
             var mockRequest = CreateMockDepositNotificationRequest();
             var mockHttpContext = new Mock<HttpContext>();
+            var mockResponse = new Mock<HttpResponse>();
+
+            mockResponse.SetupAllProperties();
+
             mockHttpContext.Setup(x => x.Request).Returns(() => mockRequest.Object);
+            mockHttpContext.Setup(x => x.Response).Returns(() => mockResponse.Object);
 
             Assert.ThrowsAsync<TrustlyNoNotificationListenerException>(async () =>
             {
@@ -142,6 +184,9 @@ namespace Client.Tests
         private Mock<HttpRequest> CreateMockDepositNotificationRequest(string method = "POST", string rpcMethod = "debit")
         {
             Mock<HttpRequest> mockRequest = new Mock<HttpRequest>();
+
+            mockRequest.SetupAllProperties();
+
             mockRequest.Setup(x => x.Body).Returns(() =>
             {
                 var json = JsonConvert.SerializeObject(

@@ -70,13 +70,20 @@ namespace Trustly.Api.Client
                 uuid,
                 new NotificationResponse
                 {
-                    Status = status,
-                    ExtensionData = new Dictionary<string, object>
-                    {
-                        { "message", message }
-                    }
+                    Status = status
                 }
             );
+
+            if (client.Settings.IncludeMessageInNotificationResponse)
+            {
+                if (string.IsNullOrEmpty(message) == false)
+                {
+                    rpcResponse.Result.Data.ExtensionData = new Dictionary<string, object>
+                    {
+                        { "message", message }
+                    };
+                }
+            }
 
             var rpcString = JsonConvert.SerializeObject(rpcResponse);
             var rpcBytes = Encoding.UTF8.GetBytes(rpcString);

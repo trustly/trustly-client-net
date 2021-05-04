@@ -12,7 +12,7 @@ namespace Client.Tests
         [SetUp]
         public void SetUp()
         {
-            this.client = new TrustlyApiClient(new TrustlyApiClientSettings(test: true));
+            this.client = new TrustlyApiClient(TrustlyApiClientSettings.ForDefaultTest());
         }
 
         [Test]
@@ -36,12 +36,16 @@ namespace Client.Tests
             {
                 var response = client.AccountPayout(new Trustly.Api.Domain.Requests.AccountPayoutRequestData
                 {
+                    NotificationURL = "https://fake.test.notification.trustly.com",
+                    MessageID = Guid.NewGuid().ToString(),
+                    EndUserID = "pontus.eliason@trustly.com",
                     AccountID = "1234567890",
                     Currency = "SEK",
                     Amount = "100.1",
 
                     Attributes = new Trustly.Api.Domain.Requests.AccountPayoutRequestDataAttributes
                     {
+                        ShopperStatement = "A Shopper Statement"
                     }
                 });
             });
@@ -120,13 +124,15 @@ namespace Client.Tests
         [Test]
         public void TestDenyWithdrawals()
         {
-            var response = client.DenyWithdrawal(new Trustly.Api.Domain.Requests.DenyWithdrawalRequestData
+            var ex = Assert.Throws<TrustlyDataException>(() =>
             {
-                OrderID = 123_123
+                var response = client.DenyWithdrawal(new Trustly.Api.Domain.Requests.DenyWithdrawalRequestData
+                {
+                    OrderID = 123_123
+                });
             });
-
-            Assert.NotNull(response);
-            Assert.IsFalse(response.Result);
+            
+            Assert.AreEqual("ERROR_NOT_FOUND", ex.ResponseError.Message);
         }
 
         [Test]

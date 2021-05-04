@@ -18,7 +18,7 @@ namespace Trustly.Api.Client
     {
         private static readonly List<TrustlyApiClient> _staticRegisteredClients = new List<TrustlyApiClient>();
 
-        private readonly TrustlyApiClientSettings _settings;
+        public TrustlyApiClientSettings Settings { get; }
 
         private readonly JsonRpcFactory _objectFactory = new();
         private readonly Serializer serializer = new();
@@ -37,8 +37,8 @@ namespace Trustly.Api.Client
 
         public TrustlyApiClient(TrustlyApiClientSettings settings)
         {
-            this._settings = settings;
-            this._signer = new JsonRpcSigner(serializer, this._settings);
+            this.Settings = settings;
+            this._signer = new JsonRpcSigner(serializer, this.Settings);
 
             this._methodToNotificationMapper.Add("account", (json, ok, error) => this.HandleNotificationFromString(json, this.OnAccount, ok, error));
             this._methodToNotificationMapper.Add("cancel", (json, ok, error) => this.HandleNotificationFromString(json, this.OnCancel, ok, error));
@@ -189,8 +189,8 @@ namespace Trustly.Api.Client
             where TReqData : IToTrustlyRequestParamsData
             where TRespData : IResponseResultData
         {
-            requestData.Username = this._settings.Username;
-            requestData.Password = this._settings.Password;
+            requestData.Username = this.Settings.Username;
+            requestData.Password = this.Settings.Password;
 
             var rpcRequest = this.CreateRequestPackage(requestData, method);
 
@@ -288,7 +288,8 @@ namespace Trustly.Api.Client
             }
             catch (Exception ex)
             {
-                onFailed(rpcRequest.Method, rpcRequest.Params.UUID, ex.Message);
+                var message = this.Settings.IncludeExceptionMessageInNotificationResponse ? ex.Message : null;
+                onFailed(rpcRequest.Method, rpcRequest.Params.UUID, message);
             }
 
             return eventHandler.GetInvocationList().Length;
@@ -302,7 +303,7 @@ namespace Trustly.Api.Client
         protected string NewHttpPost(string request)
         {
             var requestBytes = Encoding.UTF8.GetBytes(request);
-            var httpWebRequest = (HttpWebRequest)WebRequest.Create(this._settings.URL);
+            var httpWebRequest = (HttpWebRequest)WebRequest.Create(this.Settings.URL);
 
             httpWebRequest.ContentType = "application/json";
             httpWebRequest.ContentLength = requestBytes.Length;

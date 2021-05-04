@@ -21,6 +21,10 @@ namespace Trustly.Api.Client
 
         public AsymmetricKeyParameter TrustlyPublicKey { get; internal set; }
 
+        public bool IncludeMessageInNotificationResponse { get; set; } = true;
+
+        public bool IncludeExceptionMessageInNotificationResponse { get; set; } = false;
+
         private TrustlyApiClientSettings()
         {
         }
