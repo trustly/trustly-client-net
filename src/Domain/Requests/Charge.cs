@@ -47,7 +47,7 @@ namespace Trustly.Api.Domain.Requests
         public string Currency { get; set; }
     }
 
-    public class ChargeResponseData : AbstractResponseResultData
+    public class ChargeResponseData : AbstractResponseResultData, IWithRejectionResult
     {
         /// <summary>
         /// 1 if the charge was accepted for processing, 0 otherwise. Note that this is an acceptance of the order, no money has been charged from the account until you receive notifications thereof.

@@ -192,7 +192,7 @@ namespace Trustly.Api.Client
             requestData.Username = this.Settings.Username;
             requestData.Password = this.Settings.Password;
 
-            var rpcRequest = this.CreateRequestPackage(requestData, method);
+            var rpcRequest = this.CreateRequestPackage(requestData, method, uuid);
 
             var requestString = JsonConvert.SerializeObject(rpcRequest, new JsonSerializerSettings
             {
@@ -202,11 +202,6 @@ namespace Trustly.Api.Client
             var responseString = NewHttpPost(requestString);
             var rpcResponse = JsonConvert.DeserializeObject<JsonRpcResponse<TRespData>>(responseString);
 
-            if (!this._signer.Verify(rpcResponse))
-            {
-                throw new TrustlySignatureException("Incoming data signature is not valid");
-            }
-
             if (!rpcResponse.IsSuccessfulResult())
             {
                 var message = rpcResponse.Error?.Message ?? rpcResponse.Error?.Name ?? ("" + rpcResponse.Error?.Code);
@@ -214,6 +209,23 @@ namespace Trustly.Api.Client
                 {
                     ResponseError = rpcResponse.Error
                 };
+            }
+
+            if (rpcResponse.Result.Data is IWithRejectionResult rejectionResult)
+            {
+                if (!rejectionResult.Result)
+                {
+                    var message = rejectionResult.Rejected ?? "The request was rejected for an unknown reason";
+                    throw new TrustlyRejectionException("Received a rejection response from the Trustly API: " + message)
+                    {
+                        Reason = rejectionResult.Rejected
+                    };
+                }
+            }
+
+            if (!this._signer.Verify(rpcResponse))
+            {
+                throw new TrustlySignatureException("Incoming data signature is not valid");
             }
 
             if (string.IsNullOrEmpty(rpcResponse.GetUUID()) || !rpcResponse.GetUUID().Equals(rpcRequest.Params.UUID))

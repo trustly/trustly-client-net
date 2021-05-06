@@ -15,7 +15,7 @@ namespace Trustly.Api.Domain.Requests
         public string OrderId { get; set; }
     }
 
-    public class CancelChargeResponseData : AbstractResponseResultData
+    public class CancelChargeResponseData : AbstractResponseResultData, IWithRejectionResult
     {
         /// <summary>
         /// "1" if the Charge could be canceled, and "0" otherwise.

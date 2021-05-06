@@ -98,27 +98,27 @@ namespace Client.Tests
         [Test]
         public void TestCharge()
         {
-            var response = client.Charge(new Trustly.Api.Domain.Requests.ChargeRequestData
+            var ex = Assert.Throws<TrustlyRejectionException>(() =>
             {
-                NotificationURL = "https://fake.test.notification.trustly.com",
-
-                AccountID = "1234567890",
-                MessageID = Guid.NewGuid().ToString(),
-                Currency = "SEK",
-                Amount = "100.00",
-                EndUserID = "pontus.eliason@trustly.com",
-
-                Attributes = new Trustly.Api.Domain.Requests.ChargeRequestDataAttributes
+                var response = client.Charge(new Trustly.Api.Domain.Requests.ChargeRequestData
                 {
-                    Email = "pontus.eliason@trustly.com",
-                    ShopperStatement = "A Shopper Statement"
-                }
+                    NotificationURL = "https://fake.test.notification.trustly.com",
+
+                    AccountID = "1234567890",
+                    MessageID = Guid.NewGuid().ToString(),
+                    Currency = "SEK",
+                    Amount = "100.00",
+                    EndUserID = "pontus.eliason@trustly.com",
+
+                    Attributes = new Trustly.Api.Domain.Requests.ChargeRequestDataAttributes
+                    {
+                        Email = "pontus.eliason@trustly.com",
+                        ShopperStatement = "A Shopper Statement"
+                    }
+                });
             });
 
-            // TODO: The response signature is not correctly validated?!
-
-            Assert.NotNull(response);
-            Assert.IsTrue(response.Result);
+            Assert.AreEqual("ERROR_ACCOUNT_NOT_FOUND", ex.Reason);
         }
 
         [Test]
@@ -131,7 +131,7 @@ namespace Client.Tests
                     OrderID = 123_123
                 });
             });
-            
+
             Assert.AreEqual("ERROR_NOT_FOUND", ex.ResponseError.Message);
         }
 
@@ -215,7 +215,7 @@ namespace Client.Tests
                 MessageID = Guid.NewGuid().ToString(),
                 EndUserID = "pontus.eliason@trustly.com",
                 Currency = "SEK",
-                
+
                 Attributes = new Trustly.Api.Domain.Requests.WithdrawRequestDataAttributes
                 {
                     SuggestedAmount = "100.00",
