@@ -26,6 +26,11 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      env:
+        CLIENT_USERNAME: ${{ secrets.CLIENT_USERNAME }}
+        CLIENT_PASSWORD: ${{ secrets.CLIENT_PASSWORD }}
+        CLIENT_CERT_PUBLIC: ${{ secrets.CLIENT_CERT_PUBLIC }}
+        CLIENT_CERT_PRIVATE: ${{ secrets.CLIENT_CERT_PRIVATE }}
     - name: Pack
       run: dotnet pack --no-build --configuration Release src/Client/Client.csproj --output .
     #- name: PushNuget
