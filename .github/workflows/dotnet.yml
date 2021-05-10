@@ -25,7 +25,7 @@ jobs:
     - name: Build
       run: dotnet build --no-restore --configuration Release
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --configuration Release --verbosity normal
       env:
         CLIENT_USERNAME: ${{ secrets.CLIENT_USERNAME }}
         CLIENT_PASSWORD: ${{ secrets.CLIENT_PASSWORD }}
