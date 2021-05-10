@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.OpenSsl;
 
@@ -42,9 +43,27 @@ namespace Trustly.Api.Client
             string username = null,
             string password = null,
             string publicKeyPath = null,
-            string privateKeyPath = null)
+            string privateKeyPath = null,
+
+            string envUsername = "CLIENT_USERNAME",
+            string envPassword = "CLIENT_PASSWORD",
+            string envCertPublic = "CLIENT_CERT_PUBLIC",
+            string envCertPrivate = "CLIENT_CERT_PRIVATE"
+            )
         {
-            return ForDefaultCustom(URL_TEST, username, password, publicKeyPath, privateKeyPath);
+            var hasEnvUsername = string.IsNullOrEmpty(Environment.GetEnvironmentVariable(envUsername)) == false;
+
+            if (hasEnvUsername)
+            {
+                return ForTest()
+                    .WithCredentialsFromEnv(envUsername, envPassword)
+                    .WithCertificatesFromEnv(envCertPublic, envCertPrivate)
+                    .AndTrustlyCertificate();
+            }
+            else
+            {
+                return ForDefaultCustom(URL_TEST, username, password, publicKeyPath, privateKeyPath);
+            }
         }
 
         public static TrustlyApiClientSettings ForDefaultCustom(
@@ -102,114 +121,6 @@ namespace Trustly.Api.Client
 
             return new WithEnvironment(new TrustlyApiClientSettings(), url);
         }
-
-
-
-        /*
-
-        public TrustlyApiClientSettings(bool test)
-        {
-            (test ? this.ForTest() : this.ForProduction())
-                .WithSettingsFromDirectory(null);
-        }
-
-        public TrustlyApiClientSettings(bool test, string username, string password, Stream clientPublicKeyStream, Stream clientPrivateKeyStream)
-        {
-            (test ? this.ForTest() : this.ForProduction())
-                .WithCredentials(username, password)
-                .WithClientKeysFromStreams(clientPublicKeyStream, clientPrivateKeyStream);
-        }
-
-        public TrustlyApiClientSettings ForTest()
-        {
-            this.URL = URL_TEST;
-
-            var clientAssembly = typeof(TrustlyApiClient).Assembly;
-            return
-        }
-
-        public TrustlyApiClientSettings ForProduction()
-        {
-            this.URL = URL_PRODUCTION;
-
-            var clientAssembly = typeof(TrustlyApiClient).Assembly;
-            return
-        }
-
-        public TrustlyApiClientSettings WithUrl(string url)
-        {
-            this.URL = url;
-            return this;
-        }
-
-        public TrustlyApiClientSettings WithCredentials(string username, string password)
-        {
-            this.Username = username;
-            this.Password = password;
-            return this;
-        }
-
-        public TrustlyApiClientSettings WithSettingsFromFiles(
-                string clientPublicKeyPath,
-                string clientPrivateKeyPath,
-                string usernamePath,
-                string passwordPath
-            )
-        {
-            if (File.Exists(clientPublicKeyPath) == false)
-                throw new ArgumentException($"Cannot create api settings since public key file {clientPublicKeyPath} is missing");
-            if (File.Exists(clientPrivateKeyPath) == false)
-                throw new ArgumentException($"Cannot create api settings since private key file {clientPrivateKeyPath} is missing");
-
-
-            return
-                this.WithClientKeysFromFiles(clientPublicKeyPath, clientPrivateKeyPath)
-                .WithCredentials(
-                    File.ReadAllText(usernamePath).Trim(),
-                    File.ReadAllText(passwordPath).Trim()
-                );
-        }
-
-        public TrustlyApiClientSettings WithSettingsFromDirectory(
-                string directoryPath,
-                string clientPublicKeyFileName = "trustly_client_public.pem",
-                string clientPrivateKeyFileName = "trustly_client_private.pem",
-                string clientUsernameFileName = "trustly_client_username.txt",
-                string clientPsswordFileName = "trustly_client_password.txt"
-            )
-        {
-            if (directoryPath == null)
-            {
-                directoryPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            }
-
-            var publicKeyPath = Path.Combine(directoryPath, clientPublicKeyFileName);
-            var privateKeyPath = Path.Combine(directoryPath, clientPrivateKeyFileName);
-            var usernamePath = Path.Combine(directoryPath, clientUsernameFileName);
-            var passwordPath = Path.Combine(directoryPath, clientPsswordFileName);
-
-            return this.WithSettingsFromFiles(publicKeyPath, privateKeyPath, usernamePath, passwordPath);
-        }
-
-        public TrustlyApiClientSettings WithClientKeysFromFiles(string clientPublicKeyFilePath, string clientPrivateKeyFilePath)
-        {
-            using (var publicFileStream = new FileStream(clientPublicKeyFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                using (var privateFileStream = new FileStream(clientPrivateKeyFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    return this.WithClientKeysFromStreams(publicFileStream, privateFileStream);
-                }
-            }
-        }
-
-        public TrustlyApiClientSettings WithClientKeysFromStreams(Stream clientPublicKeyStream, Stream clientPrivateKeyStream)
-        {
-            this.WithClientPublicKeyFromStream(clientPublicKeyStream);
-            this.WithClientPrivateKeyFromStream(clientPrivateKeyStream);
-
-            return this;
-        }
-        */
     }
 
     public class WithEnvironment
@@ -233,6 +144,18 @@ namespace Trustly.Api.Client
         public WithCredentials WithCredentials(string username, string password)
         {
             return new WithCredentials(this.Settings, username, password);
+        }
+
+        public WithCredentials WithCredentialsFromEnv(
+            string envUsername = "CLIENT_USERNAME",
+            string envPassword = "CLIENT_PASSWORD"
+            )
+        {
+            return new WithCredentials(
+                this.Settings,
+                Environment.GetEnvironmentVariable(envUsername),
+                Environment.GetEnvironmentVariable(envPassword)
+            );
         }
 
         public WithCredentials WithCredentialsFromUserHome()
@@ -277,6 +200,23 @@ namespace Trustly.Api.Client
             this.Settings = settings;
             this.Settings.Username = username;
             this.Settings.Password = password;
+        }
+
+        public WithClientCertificates WithCertificatesFromEnv(
+            string envCertPublic = "CLIENT_CERT_PUBLIC",
+            string envCertPrivate = "CLIENT_CERT_PRIVATE"
+            )
+        {
+            var certPublic = Environment.GetEnvironmentVariable(envCertPublic);
+            var certPrivate = Environment.GetEnvironmentVariable(envCertPrivate);
+
+            using (var streamPublic = new MemoryStream(Encoding.UTF8.GetBytes(certPublic)))
+            {
+                using (var streamPrivate = new MemoryStream(Encoding.UTF8.GetBytes(certPrivate)))
+                {
+                    return this.WithCertificatesFromStreams(streamPublic, streamPrivate);
+                }
+            }
         }
 
         public WithClientCertificates WithCertificatesFromUserHome(
@@ -326,8 +266,6 @@ namespace Trustly.Api.Client
                     return new WithClientCertificates(this.Settings, publicKeyPair, privateKeyPair.Private);
                 }
             }
-
-            //return new WithTrustlyCertificates(this.Settings);
         }
     }
 
