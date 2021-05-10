@@ -21,7 +21,7 @@ namespace Trustly.Api.Domain.UnitTests
                 {
                     settings = TrustlyApiClientSettings
                         .ForTest()
-                        .WithCredentialsFromUserHome()
+                        .WithCredentialsFromEnv()
                         .WithCertificatesFromStreams(merchantPublicKey, merchantPrivateKey)
                         .AndTrustlyCertificate();
                 }
