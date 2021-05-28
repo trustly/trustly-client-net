@@ -2,23 +2,37 @@
 
 ## Create Client
 
-You can easily create any instance of the client by instantiating it, giving a settings object with different levels of granular options.
+You can easily create an instance of the client, giving a settings object with different levels of granular options.
 
 ```C#
 var client = new TrustlyApiClient(TrustlyApiClientSettings.ForDefaultTest());
 ```
 
-This is a shorthand to the more elaborate:
+This is a shorthand to two different, more elaborate setups.
 
+If there is an environment variable sent along to the application startup, it will load the username, password and certificates from the default environment variable names:
+
+* `CLIENT_USERNAME`
+* `CLIENT_PASSWORD`
+* `CLIENT_CERT_PUBLIC`
+* `CLIENT_CERT_PRIVATE`
+
+These can of course be modified to something else, they are just the default names.
+The `CLIENT_CERT_PUBLIC` and `CLIENT_CERT_PRIVATE` are not the paths to the certificate, but the certificates themselves in UTF-8 charset.
+
+If an environment variable was found, it is virtually the same as create a client using this setup:
+
+1.
 ```C#
 var client = new TrustlyApiClient(TrustlyApiClientSettings
-                .ForTest()
-                .WithCredentialsFromUserHome()
-                .WithCertificatesFromUserHome()
-                .AndTrustlyCertificate());
+                    .ForTest()
+                    .WithCredentialsFromEnv("CLIENT_USERNAME", "CLIENT_PASSWORD")
+                    .WithCertificatesFromEnv("CLIENT_CERT_PUBLIC", "CLIENT_CERT_PRIVATE")
+                    .AndTrustlyCertificate());
 ```
 
-Which will load client credentials and certificates from the user computer's home directory.
+Or if there is no environment variable set, it will look for files in the client's user home directory.
+
 The default file names are:
 
 * `trustly_client_username.txt`
@@ -26,7 +40,16 @@ The default file names are:
 * `trustly_client_public.pem`
 * `trustly_client_private.pem`
 
-Which can of course be overridden and customized.
+2.
+```C#
+var client = new TrustlyApiClient(TrustlyApiClientSettings
+                .ForTest()
+                .WithCredentialsFromUserHome("trustly_client_username.txt", "trustly_client_password.txt")
+                .WithCertificatesFromUserHome("trustly_client_public.pem", "trustly_client_private.pem")
+                .AndTrustlyCertificate());
+```
+
+Which can of course also be overridden and customized.
 
 ## Make a request
 

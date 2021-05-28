@@ -158,20 +158,23 @@ namespace Trustly.Api.Client
             );
         }
 
-        public WithCredentials WithCredentialsFromUserHome()
+        public WithCredentials WithCredentialsFromUserHome(
+            string clientUsernameFileName = "trustly_client_username.txt",
+            string clientPasswordFileName = "trustly_client_password.txt"
+            )
         {
             var directory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            return this.WithCredentialsFromDirectory(directory);
+            return this.WithCredentialsFromDirectory(directory, clientUsernameFileName, clientPasswordFileName);
         }
 
         public WithCredentials WithCredentialsFromDirectory(
             string directoryPath,
             string clientUsernameFileName = "trustly_client_username.txt",
-            string clientPsswordFileName = "trustly_client_password.txt"
+            string clientPasswordFileName = "trustly_client_password.txt"
             )
         {
             var usernamePath = Path.Combine(directoryPath, clientUsernameFileName);
-            var passwordPath = Path.Combine(directoryPath, clientPsswordFileName);
+            var passwordPath = Path.Combine(directoryPath, clientPasswordFileName);
 
             return this.WithCredentialsFromFiles(usernamePath, passwordPath);
         }
