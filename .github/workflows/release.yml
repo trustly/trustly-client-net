@@ -35,9 +35,9 @@ jobs:
         CLIENT_CERT_PUBLIC: ${{ secrets.CLIENT_CERT_PUBLIC }}
         CLIENT_CERT_PRIVATE: ${{ secrets.CLIENT_CERT_PRIVATE }}
     - name: Pack Domain
-      run: dotnet pack --no-build --configuration Release ${{ github.workspace }}\src\Client\Domain.csproj /p:Version=${{ steps.get_version.outputs.version-without-v }} --output .
-    - name: Pack Client
       run: dotnet pack --no-build --configuration Release ${{ github.workspace }}\src\Client\Client.csproj /p:Version=${{ steps.get_version.outputs.version-without-v }} --output .
+    - name: Pack Client
+      run: dotnet pack --no-build --configuration Release ${{ github.workspace }}\src\Domain\Domain.csproj /p:Version=${{ steps.get_version.outputs.version-without-v }} --output .
     - name: Get Nuget Certificate
       id: cert_file
       uses: timheuer/base64-to-file@master
