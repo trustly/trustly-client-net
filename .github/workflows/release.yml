@@ -1,4 +1,4 @@
-name: .NET
+name: .NET Nuget
 
 on:
   push:
@@ -35,9 +35,9 @@ jobs:
         CLIENT_CERT_PUBLIC: ${{ secrets.CLIENT_CERT_PUBLIC }}
         CLIENT_CERT_PRIVATE: ${{ secrets.CLIENT_CERT_PRIVATE }}
     - name: Pack Domain
-      run: dotnet pack --no-build --configuration Release src/Client/Domain.csproj /p:Version=${{ steps.get_version.outputs.version-without-v }} --output .
+      run: dotnet pack --no-build --configuration Release ${{ github.workspace }}\src\Client\Domain.csproj /p:Version=${{ steps.get_version.outputs.version-without-v }} --output .
     - name: Pack Client
-      run: dotnet pack --no-build --configuration Release src/Client/Client.csproj /p:Version=${{ steps.get_version.outputs.version-without-v }} --output .
+      run: dotnet pack --no-build --configuration Release ${{ github.workspace }}\src\Client\Client.csproj /p:Version=${{ steps.get_version.outputs.version-without-v }} --output .
     - name: Get Nuget Certificate
       id: cert_file
       uses: timheuer/base64-to-file@master
@@ -46,10 +46,10 @@ jobs:
         encodedString: ${{ secrets.NUGET_CERT }}
     - name: Convert PKCS7 certificate to x509 DER
       run: |
-        openssl pkcs7 -print_certs -in ${{ steps.cert_file.outputs.filePath }} -out ${{ runner.temp }}/certfile.pem
-        openssl x509 -outform der -in ${{ runner.temp }}/certfile.pem -out ${{ runner.temp }}/certfile.der
+        openssl pkcs7 -print_certs -in ${{ steps.cert_file.outputs.filePath }} -out ${{ runner.temp }}\certfile.pem
+        openssl x509 -outform der -in ${{ runner.temp }}\certfile.pem -out ${{ runner.temp }}\certfile.der
     - name: Sign Nuget
-      run: nuget sign *.nupkg -CertificatePath ${{ runner.temp }}/certfile.der -Timestamper http://timestamp.digicert.com –NonInteractive
+      run: nuget sign *.nupkg -CertificatePath ${{ runner.temp }}\certfile.der -Timestamper http://timestamp.digicert.com –NonInteractive
         # -CertificatePassword ${{ secrets.CERT_PWD }}
     - name: Push Nuget
       run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
