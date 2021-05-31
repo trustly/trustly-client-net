@@ -4,11 +4,13 @@
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Trustly.Api.Domain</RootNamespace>
 
-    <PackageId>trustly-net-domain</PackageId>
+    <PackageId>trustly-api-domain</PackageId>
     <Version>1.0.0</Version>
     <Authors>Trustly</Authors>
     <Company>Trustly</Company>
     <PackageDescription>ClientApi-Domain</PackageDescription>
+
+    <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/trustly/trustly-client-net</RepositoryUrl>
 
   </PropertyGroup>
