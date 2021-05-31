@@ -44,7 +44,9 @@ jobs:
       with:
         fileName: 'certfile.der'
         encodedString: ${{ secrets.NUGET_CERT }}
-    - name: Sign Nuget
+    - name: Sign Nuget Client
       run: NuGet sign trustly-api-client.${{ steps.get_version.outputs.version-without-v }}.nupkg -Timestamper http://timestamp.digicert.com -CertificatePath ${{ steps.cert_file.outputs.filePath }}
+    - name: Sign Nuget Domain
+      run: NuGet sign trustly-api-domain.${{ steps.get_version.outputs.version-without-v }}.nupkg -Timestamper http://timestamp.digicert.com -CertificatePath ${{ steps.cert_file.outputs.filePath }}
     - name: Push Nuget
       run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
