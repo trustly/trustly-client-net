@@ -42,14 +42,14 @@ jobs:
       id: cert_file
       uses: timheuer/base64-to-file@master
       with:
-        fileName: 'certfile.p7b'
+        fileName: 'certfile.der'
         encodedString: ${{ secrets.NUGET_CERT }}
-    - name: Convert PKCS7 certificate to x509 DER
-      run: |
-        openssl pkcs7 -print_certs -in ${{ steps.cert_file.outputs.filePath }} -out ${{ runner.temp }}\certfile.pem
-        openssl x509 -outform der -in ${{ runner.temp }}\certfile.pem -out ${{ runner.temp }}\certfile.der
+    #- name: Convert PKCS7 certificate to PEM
+    #  run: openssl pkcs7 -print_certs -in ${{ steps.cert_file.outputs.filePath }} -out ${{ runner.temp }}\certfile.pem
+    #- name: Convert PEM certificate to x509 DER
+    #  run: openssl x509 -outform der -in ${{ runner.temp }}\certfile.pem -out ${{ runner.temp }}\certfile.der
     - name: Sign Nuget
-      run: nuget sign *.nupkg -CertificatePath ${{ runner.temp }}\certfile.der -Timestamper http://timestamp.digicert.com –NonInteractive
+      run: nuget sign *.nupkg -CertificatePath ${{ steps.cert_file.outputs.filePath }} -Timestamper http://timestamp.digicert.com –NonInteractive
         # -CertificatePassword ${{ secrets.CERT_PWD }}
     - name: Push Nuget
       run: dotnet nuget push *.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
