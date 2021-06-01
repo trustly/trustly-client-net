@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.OpenSsl;
@@ -30,15 +29,50 @@ namespace Trustly.Api.Client
         {
         }
 
+        /// <summary>
+        /// Creates settings instance, by default looking among
+        /// environment variables, or using the given parameters.
+        /// </summary>
+        /// <param name="username">Username; If null, looks for env or in user home.</param>
+        /// <param name="password">Password; If null, looks for env or in user home.</param>
+        /// <param name="publicKeyPath">Public Key; If null, looks for env or in user home.</param>
+        /// <param name="privateKeyPath">Private Key; If null, looks for env or in user home.</param>
+        /// <param name="envUsername">Name of username env variable</param>
+        /// <param name="envPassword">Name of password env variable</param>
+        /// <param name="envCertPublic">Name of public key env variable</param>
+        /// <param name="envCertPrivate">Name of private key env variable</param>
+        /// <returns></returns>
         public static TrustlyApiClientSettings ForDefaultProduction(
             string username = null,
             string password = null,
             string publicKeyPath = null,
-            string privateKeyPath = null)
+            string privateKeyPath = null,
+
+            string envUsername = "CLIENT_USERNAME",
+            string envPassword = "CLIENT_PASSWORD",
+            string envCertPublic = "CLIENT_CERT_PUBLIC",
+            string envCertPrivate = "CLIENT_CERT_PRIVATE"
+            )
         {
-            return ForDefaultCustom(URL_PRODUCTION, username, password, publicKeyPath, privateKeyPath);
+            return ForDefaultCustom(URL_PRODUCTION,
+                username, password, publicKeyPath, privateKeyPath,
+                envUsername, envPassword, envCertPublic, envCertPrivate
+            );
         }
 
+        /// <summary>
+        /// Creates settings instance, by default looking among
+        /// environment variables, or using the given parameters.
+        /// </summary>
+        /// <param name="username">Username; If null, looks for env or in user home.</param>
+        /// <param name="password">Password; If null, looks for env or in user home.</param>
+        /// <param name="publicKeyPath">Public Key; If null, looks for env or in user home.</param>
+        /// <param name="privateKeyPath">Private Key; If null, looks for env or in user home.</param>
+        /// <param name="envUsername">Name of username env variable</param>
+        /// <param name="envPassword">Name of password env variable</param>
+        /// <param name="envCertPublic">Name of public key env variable</param>
+        /// <param name="envCertPrivate">Name of private key env variable</param>
+        /// <returns></returns>
         public static TrustlyApiClientSettings ForDefaultTest(
             string username = null,
             string password = null,
@@ -51,6 +85,40 @@ namespace Trustly.Api.Client
             string envCertPrivate = "CLIENT_CERT_PRIVATE"
             )
         {
+            return ForDefaultCustom(URL_TEST,
+                username, password, publicKeyPath, privateKeyPath,
+                envUsername, envPassword, envCertPublic, envCertPrivate
+            );
+        }
+
+        /// <summary>
+        /// Quickly create a settings instance with a custom target URL.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="username"></param>
+        /// <param name="password"></param>
+        /// <param name="publicKeyPath">Path to public key. If null, it will be looked for in user home</param>
+        /// <param name="privateKeyPath">Path to private key. If null, it will be looked for in user home</param>
+        /// <param name="envUsername">Name of username env variable</param>
+        /// <param name="envPassword">Name of password env variable</param>
+        /// <param name="envCertPublic">Name of public key env variable</param>
+        /// <param name="envCertPrivate">Name of private key env variable</param>
+        /// <returns></returns>
+        public static TrustlyApiClientSettings ForDefaultCustom(
+            string url,
+            string username = null,
+            string password = null,
+            string publicKeyPath = null,
+            string privateKeyPath = null,
+
+            string envUsername = "CLIENT_USERNAME",
+            string envPassword = "CLIENT_PASSWORD",
+            string envCertPublic = "CLIENT_CERT_PUBLIC",
+            string envCertPrivate = "CLIENT_CERT_PRIVATE"
+            )
+        {
+            var settings = new WithEnvironment(new TrustlyApiClientSettings(), url);
+
             var hasEnvUsername = string.IsNullOrEmpty(Environment.GetEnvironmentVariable(envUsername)) == false;
 
             if (hasEnvUsername)
@@ -62,44 +130,32 @@ namespace Trustly.Api.Client
             }
             else
             {
-                return ForDefaultCustom(URL_TEST, username, password, publicKeyPath, privateKeyPath);
-            }
-        }
+                WithCredentials withCredentials;
+                if (string.IsNullOrEmpty(username))
+                {
+                    withCredentials = settings
+                        .WithCredentialsFromUserHome();
+                }
+                else
+                {
+                    withCredentials = settings
+                        .WithCredentials(username, password);
+                }
 
-        public static TrustlyApiClientSettings ForDefaultCustom(
-            string url,
-            string username = null,
-            string password = null,
-            string publicKeyPath = null,
-            string privateKeyPath = null)
-        {
-            var settings = new WithEnvironment(new TrustlyApiClientSettings(), url);
+                WithClientCertificates withCertificates;
+                if (string.IsNullOrEmpty(privateKeyPath))
+                {
+                    withCertificates = withCredentials
+                        .WithCertificatesFromUserHome();
+                }
+                else
+                {
+                    withCertificates = withCredentials
+                        .WithCertificatesFromFiles(publicKeyPath, privateKeyPath);
+                }
 
-            WithCredentials withCredentials;
-            if (string.IsNullOrEmpty(username))
-            {
-                withCredentials = settings
-                    .WithCredentialsFromUserHome();
+                return withCertificates.AndTrustlyCertificate();
             }
-            else
-            {
-                withCredentials = settings
-                    .WithCredentials(username, password);
-            }
-
-            WithClientCertificates withCertificates;
-            if (string.IsNullOrEmpty(privateKeyPath))
-            {
-                withCertificates = withCredentials
-                    .WithCertificatesFromUserHome();
-            }
-            else
-            {
-                withCertificates = withCredentials
-                    .WithCertificatesFromFiles(publicKeyPath, privateKeyPath);
-            }
-
-            return withCertificates.AndTrustlyCertificate();
         }
 
         public static WithEnvironment ForProduction()

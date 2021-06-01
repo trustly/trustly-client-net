@@ -42,7 +42,7 @@ jobs:
       id: cert_file
       uses: timheuer/base64-to-file@master
       with:
-        fileName: 'certfile.der'
+        fileName: 'certfile.pfx'
         encodedString: ${{ secrets.NUGET_CERT }}
     - name: Sign Nuget Client
       run: NuGet sign trustly-api-client.${{ steps.get_version.outputs.version-without-v }}.nupkg -Timestamper http://timestamp.digicert.com -CertificatePath ${{ steps.cert_file.outputs.filePath }}
