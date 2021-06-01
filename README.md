@@ -1,5 +1,10 @@
 # Trustly .NET API Client
 
+You can download this project as a NuGet dependency at https://www.nuget.org/packages/trustly-api-client/
+
+You could also clone this repository, but we recommend using NuGet to keep up to date with any bug fixes,
+and to keep your own codebase as clean as possible.
+
 ## Create Client
 
 You can easily create an instance of the client, giving a settings object with different levels of granular options.
