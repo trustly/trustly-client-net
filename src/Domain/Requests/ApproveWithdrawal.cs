@@ -8,7 +8,7 @@ namespace Trustly.Api.Domain.Requests
 {
     public class ApproveWithdrawalRequestData : AbstractToTrustlyRequestParamsData<EmptyRequestParamsDataAttributes>
     {
-        public uint OrderID { get; set; }
+        public long OrderID { get; set; }
     }
 
     public class ApproveWithdrawalResponseData : AbstractResponseResultData
