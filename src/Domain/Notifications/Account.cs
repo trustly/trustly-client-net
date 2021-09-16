@@ -18,7 +18,7 @@ namespace Trustly.Api.Domain.Notifications
         public string AccountID { get; set; }
 
         [JsonProperty("verified")]
-        public int Verified { get; set; }
+        public string Verified { get; set; }
     }
 
     public class AccountNotificationDataAttributes : AbstractRequestParamsDataAttributes

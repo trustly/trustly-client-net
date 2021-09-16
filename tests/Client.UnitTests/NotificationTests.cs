@@ -181,6 +181,24 @@ namespace Client.Tests
             Assert.AreEqual(1, receivedUnknownNotifications);
         }
 
+        [Test]
+        public void TestAccountNotification()
+        {
+            // TODO: It seems you cannot validate the signature of Account Notification. Needs to be fixed.
+
+            var receivedCount = 0;
+
+            client.OnAccount += (sender, args) =>
+            {
+                receivedCount++;
+            };
+
+            var mockRequest = this.CreateMockAccountNotificationRequest();
+            client.HandleNotificationFromRequest(mockRequest.Object);
+
+            Assert.AreEqual(1, receivedCount);
+        }
+
         private Mock<HttpRequest> CreateMockDepositNotificationRequest(string method = "POST", string rpcMethod = "debit")
         {
             Mock<HttpRequest> mockRequest = new Mock<HttpRequest>();
@@ -202,6 +220,54 @@ namespace Client.Tests
                             Timestamp = "2021-01-01 01:01:01"
                         },
                         rpcMethod
+                    )
+                );
+
+                var byteArray = Encoding.UTF8.GetBytes(json);
+                var stream = new MemoryStream(byteArray);
+                stream.Flush();
+                stream.Position = 0;
+
+                return stream;
+            });
+            mockRequest.Setup(x => x.Method).Returns(() => method);
+            mockRequest.Setup(x => x.Path).Returns("/trustly/notifications");
+
+            return mockRequest;
+        }
+
+        private Mock<HttpRequest> CreateMockAccountNotificationRequest(string method = "POST")
+        {
+            Mock<HttpRequest> mockRequest = new Mock<HttpRequest>();
+
+            mockRequest.SetupAllProperties();
+
+            mockRequest.Setup(x => x.Body).Returns(() =>
+            {
+                var json = JsonConvert.SerializeObject(
+                    client.CreateRequestPackage(
+                        new AccountNotificationData
+                        {
+                            MessageID = Guid.NewGuid().ToString(),
+                            OrderID = Guid.NewGuid().ToString(),
+                            NotificationID = Guid.NewGuid().ToString(),
+                            AccountID = "123",
+                            Verified = "1",
+                            Attributes = new AccountNotificationDataAttributes
+                            {
+                                Clearinghouse = "SWEDEN",
+                                Bank = "The Bank",
+                                Descriptor = "**** *084057",
+                                Lastdigits = "084057",
+                                PersonID = "SE198201019876",
+                                Name = "John Doe",
+                                Address = "Examplestreet 1",
+                                Zipcode = "12345",
+                                City = "Examplecity",
+                                DirectDebitMandate = 0
+                            }
+                        },
+                        "account"
                     )
                 );
 
