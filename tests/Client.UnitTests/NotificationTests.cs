@@ -43,6 +43,12 @@ namespace Client.Tests
             this.client = new TrustlyApiClient(settings);
         }
 
+        [TearDown]
+        public void TearDown()
+        {
+            this.client.Dispose();
+        }
+
         [Test]
         public void TestNotificationHandlerFromRequest()
         {
@@ -52,7 +58,7 @@ namespace Client.Tests
                 receivedDebitNotifications++;
             };
 
-            var mockRequest = this.CreateMockDepositNotificationRequest();
+            var mockRequest = this.CreateMockDebitNotificationRequest();
             client.HandleNotificationFromRequest(mockRequest.Object);
 
             Assert.AreEqual(1, receivedDebitNotifications);
@@ -68,7 +74,7 @@ namespace Client.Tests
                 args.RespondWithOK();
             };
 
-            var mockRequest = this.CreateMockDepositNotificationRequest();
+            var mockRequest = this.CreateMockDebitNotificationRequest();
             var mockHttpContext = new Mock<HttpContext>();
             var mockResponse = new Mock<HttpResponse>();
 
@@ -93,7 +99,7 @@ namespace Client.Tests
                 args.RespondWithFailed("Things went badly");
             };
 
-            var mockRequest = this.CreateMockDepositNotificationRequest();
+            var mockRequest = this.CreateMockDebitNotificationRequest();
             var mockHttpContext = new Mock<HttpContext>();
             var mockResponse = new Mock<HttpResponse>();
 
@@ -118,7 +124,7 @@ namespace Client.Tests
         [Test]
         public void TestNotificationHandlerFromMiddlewareRequestWithoutListener()
         {
-            var mockRequest = CreateMockDepositNotificationRequest();
+            var mockRequest = CreateMockDebitNotificationRequest();
             var mockHttpContext = new Mock<HttpContext>();
             var mockResponse = new Mock<HttpResponse>();
 
@@ -142,7 +148,7 @@ namespace Client.Tests
                 receivedDebitNotifications++;
             };
 
-            var mockRequest = this.CreateMockDepositNotificationRequest(method: "GET");
+            var mockRequest = this.CreateMockDebitNotificationRequest(method: "GET");
 
             Assert.Throws<TrustlyNotificationException>(() =>
             {
@@ -174,7 +180,7 @@ namespace Client.Tests
                 Assert.AreEqual("user@email.com", args.Data.ExtensionData["enduserid"]);
             };
 
-            var mockRequest = this.CreateMockDepositNotificationRequest(rpcMethod: "blaha");
+            var mockRequest = this.CreateMockDebitNotificationRequest(rpcMethod: "blaha");
             client.HandleNotificationFromRequest(mockRequest.Object);
 
             Assert.AreEqual(0, receivedDebitNotifications);
@@ -199,7 +205,7 @@ namespace Client.Tests
             Assert.AreEqual(1, receivedCount);
         }
 
-        private Mock<HttpRequest> CreateMockDepositNotificationRequest(string method = "POST", string rpcMethod = "debit")
+        private Mock<HttpRequest> CreateMockDebitNotificationRequest(string method = "POST", string rpcMethod = "debit")
         {
             Mock<HttpRequest> mockRequest = new Mock<HttpRequest>();
 
