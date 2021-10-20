@@ -50,7 +50,7 @@ namespace Trustly.Api.Domain.Requests
         /// Do not use this attribute in combination with <see cref="AbstractDepositAndWithdrawDataAttributes.SuggestedMinAmount"/> and <see cref="AbstractDepositAndWithdrawDataAttributes.SuggestedMaxAmount"/>..
         /// Only digits. Use dot (.) as decimal separator.
         /// </summary>
-        [JsonProperty("Amount", Required = Required.Always)]
+        [JsonProperty("Amount")]
         public string Amount { get; set; }
 
         /// <summary>

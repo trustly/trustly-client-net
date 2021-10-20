@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -32,17 +33,17 @@ namespace Trustly.Api.Client
                 foreach (var client in TrustlyApiClient.GetRegisteredClients())
                 {
                     clientCount++;
-                    client.HandleNotificationFromRequest(
+                    await client.HandleNotificationFromRequestAsync(
                         request,
-                        onOK: (rpcMethod, uuid) =>
+                        onOK: async (rpcMethod, uuid) =>
                         {
                             responseCount++;
-                            Respond(client, context.Response, rpcMethod, uuid, "OK", null, HttpStatusCode.OK);
+                            await Respond(client, context.Response, rpcMethod, uuid, "OK", null, HttpStatusCode.OK);
                         },
-                        onFailed: (rpcMethod, uuid, message) =>
+                        onFailed: async (rpcMethod, uuid, message) =>
                         {
                             responseCount++;
-                            Respond(client, context.Response, rpcMethod, uuid, "FAILED", message, HttpStatusCode.InternalServerError);
+                            await Respond(client, context.Response, rpcMethod, uuid, "FAILED", message, HttpStatusCode.InternalServerError);
                         }
                     );
                 }
@@ -63,7 +64,7 @@ namespace Trustly.Api.Client
             }
         }
 
-        public static void Respond(TrustlyApiClient client, HttpResponse response, string method, string uuid, string status, string message, HttpStatusCode httpStatusCode)
+        public static async Task Respond(TrustlyApiClient client, HttpResponse response, string method, string uuid, string status, string message, HttpStatusCode httpStatusCode)
         {
             var rpcResponse = client.CreateResponsePackage(
                 method,
@@ -86,11 +87,13 @@ namespace Trustly.Api.Client
             }
 
             var rpcString = JsonConvert.SerializeObject(rpcResponse);
-            var rpcBytes = Encoding.UTF8.GetBytes(rpcString);
-            var rpcStream = new MemoryStream(rpcBytes);
 
-            response.Body = rpcStream;
+            var assemblyName = Assembly.GetExecutingAssembly().GetName();
+            var assemblyVersion = assemblyName.Version;
+
+            response.Headers.Add("User-Agent", new Microsoft.Extensions.Primitives.StringValues("trustly-api-client/" + assemblyVersion));
             response.StatusCode = (int)httpStatusCode;
+            await response.WriteAsync(rpcString);
         }
     }
 }

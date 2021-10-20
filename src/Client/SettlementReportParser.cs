@@ -6,6 +6,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using Trustly.Api.Domain.Requests;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Trustly.Api.Client
 {
@@ -14,9 +17,7 @@ namespace Trustly.Api.Client
         private delegate void Mapper(SettlementReportResponseDataEntry row, string value);
 
         private readonly static Mapper NOOP_MAPPER = (row, value) => { };
-        private readonly static Regex EXP_CSV_VALUE = new Regex("(?:^|,)(?=[^\"]| (\")?)\" ? ((? (1)[^\"]*|[^,\"] *))\"?(?=,|$)", RegexOptions.Compiled | RegexOptions.Singleline);
-
-        private readonly Dictionary<string, Mapper> _mappers = new();
+        private readonly Dictionary<string, Mapper> _mappers = new Dictionary<string, Mapper>();
 
         public SettlementReportParser()
         {
@@ -35,7 +36,7 @@ namespace Trustly.Api.Client
             {
                 if (!decimal.TryParse(value, out decimal result))
                 {
-                    throw new ArgumentException($"Could not convert value '${value}' into a decimal");
+                    throw new ArgumentException($"Could not convert value '{value}' into a decimal");
                 }
 
                 row.Amount = result;
@@ -45,7 +46,7 @@ namespace Trustly.Api.Client
             {
                 if (!decimal.TryParse(value, out decimal result))
                 {
-                    throw new ArgumentException($"Could not convert value '${value}' into a decimal");
+                    throw new ArgumentException($"Could not convert value '{value}' into a decimal");
                 }
 
                 row.FxPaymentAmount = result;
@@ -55,7 +56,7 @@ namespace Trustly.Api.Client
             {
                 if (!decimal.TryParse(value, out decimal result))
                 {
-                    throw new ArgumentException($"Could not convert value '${value}' into a decimal");
+                    throw new ArgumentException($"Could not convert value '{value}' into a decimal");
                 }
 
                 row.Total = result;
@@ -65,7 +66,7 @@ namespace Trustly.Api.Client
             {
                 if (!DateTime.TryParse(value, out DateTime result))
                 {
-                    throw new ArgumentException($"Could not convert value '${value}' into a decimal");
+                    throw new ArgumentException($"Could not convert value '{value}' into a DateTime");
                 }
 
                 row.Datestamp = result;
@@ -74,8 +75,7 @@ namespace Trustly.Api.Client
 
         public List<SettlementReportResponseDataEntry> Parse(string csv)
         {
-
-            var lines = csv.Replace("\r", "").Split('\n');
+            var lines = csv.Replace("\r", "").Trim('\n').Split('\n');
             var rows = new List<SettlementReportResponseDataEntry>();
 
             if (lines.Length == 0)
@@ -106,29 +106,74 @@ namespace Trustly.Api.Client
             for (var i = 1; i < lines.Length; i++)
             {
                 var line = lines[i];
-
-                var parser = new Microsoft.VisualBasic.FileIO.TextFieldParser(new StringReader(line));
-                parser.HasFieldsEnclosedInQuotes = true;
-                parser.SetDelimiters(",");
-
-                while (!parser.EndOfData)
+                if (String.IsNullOrEmpty(line))
                 {
-                    var fields = parser.ReadFields();
-
-                    var row = new SettlementReportResponseDataEntry();
-                    for (var columnIndex = 0; columnIndex < fields.Length; columnIndex++)
-                    {
-                        if (string.IsNullOrEmpty(fields[columnIndex]) == false)
-                        {
-                            localMappers[columnIndex](row, fields[columnIndex]);
-                        }
-                    }
-
-                    rows.Add(row);
+                    continue;
                 }
+
+                var fieldsValues = this.GetFieldValues(line);
+
+                var row = new SettlementReportResponseDataEntry();
+                for (var columnIndex = 0; columnIndex < fieldsValues.Length; columnIndex++)
+                {
+                    if (string.IsNullOrEmpty(fieldsValues[columnIndex]) == false)
+                    {
+                        localMappers[columnIndex](row, fieldsValues[columnIndex]);
+                    }
+                }
+
+                rows.Add(row);
             }
 
             return rows;
+        }
+
+        private string[] GetFieldValues(string line)
+        {
+            List<string> tokens = new List<string>();
+
+            var buffer = new StringBuilder();
+            var insideQuote = false;
+
+            for (var i = 0; i < line.Length; i++)
+            {
+                var c = line[i];
+                if (insideQuote)
+                {
+                    if (c == '"')
+                    {
+                        insideQuote = false;
+                    }
+                    else
+                    {
+                        buffer.Append(c);
+                    }
+                }
+                else
+                {
+                    if (c == '"')
+                    {
+                        insideQuote = true;
+                    }
+                    else if (c == ',')
+                    {
+                        tokens.Add(buffer.ToString());
+                        buffer.Clear();
+                    }
+                    else
+                    {
+                        buffer.Append(c);
+                    }
+                }
+            }
+
+            if (buffer.Length > 0)
+            {
+                tokens.Add(buffer.ToString());
+                buffer.Clear();
+            }
+
+            return tokens.ToArray();
         }
     }
 }

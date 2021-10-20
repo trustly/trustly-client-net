@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Trustly.Api.Domain</RootNamespace>
 
     <PackageId>trustly-api-domain</PackageId>
@@ -17,11 +17,15 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Base\" />
     <Folder Include="Notifications\" />
     <Folder Include="Requests\" />
     <Folder Include="Common\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="System.ComponentModel.Annotations" />
   </ItemGroup>
 </Project>

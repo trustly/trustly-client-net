@@ -1,11 +1,12 @@
 ﻿using System;
 using Trustly.Api.Domain.Base;
+using System.Threading.Tasks;
 
 namespace Trustly.Api.Client
 {
-    public delegate void NotificationResponseDelegate(string method, string uuid);
+    public delegate Task NotificationResponseDelegate(string method, string uuid);
 
-    public delegate void NotificationFailResponseDelegate(string method, string uuid, string message);
+    public delegate Task NotificationFailResponseDelegate(string method, string uuid, string message);
 
     public class NotificationArgs<TData>
         where TData : IRequestParamsData

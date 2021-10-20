@@ -16,7 +16,6 @@ namespace Trustly.Api.Domain.Base
     public abstract class AbstractRequestParamsData<TAttr> : IRequestParamsData
         where TAttr : AbstractRequestParamsDataAttributes
     {
-        //[System.ComponentModel.DataAnnotations.Va]
-        public TAttr Attributes { get; set; }
+        
     }
 }

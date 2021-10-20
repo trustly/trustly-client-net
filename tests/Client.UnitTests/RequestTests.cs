@@ -2,8 +2,9 @@ using System;
 using NUnit.Framework;
 using Trustly.Api.Client;
 using Trustly.Api.Domain.Exceptions;
+using System.Threading.Tasks;
 
-namespace Client.Tests
+namespace Trustly.Api.Client.Tests
 {
     public class RequestTests
     {

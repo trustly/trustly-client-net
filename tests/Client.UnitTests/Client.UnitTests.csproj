@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFrameworks>net5.0</TargetFrameworks>
 
     <IsPackable>false</IsPackable>
     <RootNamespace>Trustly.Api.Client.UnitTests</RootNamespace>
@@ -62,6 +62,8 @@
     <None Remove="Keys\merchant_private_key.cer" />
     <None Remove="Keys\trustly_local_fake_private.pem" />
     <None Remove="Keys\trustly_local_fake_public.pem" />
+    <None Remove="System.Threading.Tasks" />
+    <None Remove="Microsoft.Bcl.AsyncInterfaces" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Keys\merchant_private_key.cer">

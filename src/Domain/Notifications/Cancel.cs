@@ -3,7 +3,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Notifications
 {
-    public class CancelNotificationData : AbstractRequestParamsData<EmptyRequestParamsDataAttributes>
+    public class CancelNotificationData : AbstractFromTrustlyRequestParamsData<EmptyRequestParamsDataAttributes>
     {
         [JsonProperty("messageid")]
         public string MessageID { get; set; }

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -20,10 +21,10 @@ namespace Trustly.Api.Client
 
         public TrustlyApiClientSettings Settings { get; }
 
-        private readonly JsonRpcFactory _objectFactory = new();
-        private readonly Serializer serializer = new();
+        private readonly JsonRpcFactory _objectFactory = new JsonRpcFactory();
+        private readonly Serializer serializer = new Serializer();
         private readonly JsonRpcSigner _signer;
-        private readonly JsonRpcValidator _validator = new();
+        private readonly JsonRpcValidator _validator = new JsonRpcValidator();
 
         public event EventHandler<NotificationArgs<AccountNotificationData>> OnAccount;
         public event EventHandler<NotificationArgs<CancelNotificationData>> OnCancel;
@@ -33,7 +34,8 @@ namespace Trustly.Api.Client
         public event EventHandler<NotificationArgs<PendingNotificationData>> OnPending;
         public event EventHandler<NotificationArgs<UnknownNotificationData>> OnUnknownNotification;
 
-        private readonly Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, int>> _methodToNotificationMapper = new();
+        private readonly Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, int>> _methodToNotificationMapper
+            = new Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, int>>();
 
         public TrustlyApiClient(TrustlyApiClientSettings settings)
         {
@@ -236,13 +238,13 @@ namespace Trustly.Api.Client
             return rpcResponse.Result.Data;
         }
 
-        public int HandleNotificationFromRequest(HttpRequest request, NotificationResponseDelegate onOK = null, NotificationFailResponseDelegate onFailed = null)
+        public async Task<int> HandleNotificationFromRequestAsync(HttpRequest request, NotificationResponseDelegate onOK = null, NotificationFailResponseDelegate onFailed = null)
         {
             if (string.Equals(request.Method, "post", StringComparison.InvariantCultureIgnoreCase))
             {
                 using (var sr = new StreamReader(request.Body))
                 {
-                    var requestStringBody = sr.ReadToEnd();
+                    var requestStringBody = await sr.ReadToEndAsync();
                     return this.HandleNotificationFromString(requestStringBody, onOK, onFailed);
                 }
             }

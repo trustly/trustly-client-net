@@ -136,7 +136,7 @@ You cannot create an API Client, do a request, and then dispose of the client. I
 
 ---
 
-2. Or Manually, by calling on `client.HandleNotificationFromRequest(HttpRequest request, Callback onOK, Callback onFailed)`.
+2. Or Manually, by calling on asynchronous `client.HandleNotificationFromRequestAsync(HttpRequest request, Callback onOK, Callback onFailed)`.
 
 This will *not* automatically send an `OK` or `Failed` response back to the Trustly server.
 

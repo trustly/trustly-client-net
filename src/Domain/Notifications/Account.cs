@@ -3,7 +3,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Notifications
 {
-    public class AccountNotificationData : AbstractRequestParamsData<AccountNotificationDataAttributes>
+    public class AccountNotificationData : AbstractFromTrustlyRequestParamsData<AccountNotificationDataAttributes>
     {
         [JsonProperty("messageid")]
         public string MessageID { get; set; }
@@ -81,6 +81,6 @@ namespace Trustly.Api.Domain.Notifications
         /// 1 if a direct debit mandate exists for this account, 0 otherwise
         /// </summary>
         [JsonProperty("directdebitmandate")]
-        public int DirectDebitMandate { get; set; }
+        public int? DirectDebitMandate { get; set; }
     }
 }

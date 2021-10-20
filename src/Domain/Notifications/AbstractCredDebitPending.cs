@@ -4,7 +4,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Notifications
 {
-    public class AbstractCreditDebitPendingPayoutNotificationData : AbstractRequestParamsData<EmptyRequestParamsDataAttributes>
+    public class AbstractCreditDebitPendingPayoutNotificationData : AbstractFromTrustlyRequestParamsData<EmptyRequestParamsDataAttributes>
     {
         [JsonProperty("amount")]
         public string Amount { get; set; }

@@ -6,8 +6,8 @@ namespace Trustly.Api.Domain.Base
 {
     public interface IToTrustlyRequestParamsData : IRequestParamsData
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        string Username { get; set; }
+        string Password { get; set; }
     }
 
     public class AbstractToTrustlyRequestParamsData<TAttr> : AbstractRequestParamsData<TAttr>, IToTrustlyRequestParamsData
@@ -28,5 +28,8 @@ namespace Trustly.Api.Domain.Base
         [Required]
         [JsonProperty("Password")]
         public string Password { get; set; }
+
+        [JsonProperty(PropertyName = "Attributes", NullValueHandling = NullValueHandling.Ignore)]
+        public TAttr Attributes { get; set; }
     }
 }

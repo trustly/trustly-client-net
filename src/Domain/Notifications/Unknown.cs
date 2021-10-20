@@ -5,7 +5,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Notifications
 {
-    public class UnknownNotificationData : AbstractRequestParamsData<EmptyRequestParamsDataAttributes>
+    public class UnknownNotificationData : AbstractFromTrustlyRequestParamsData<EmptyRequestParamsDataAttributes>
     {
         [JsonExtensionData]
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

@@ -3,14 +3,13 @@ using NUnit.Framework;
 using Trustly.Api.Client;
 using Trustly.Api.Domain.Requests;
 
-namespace Trustly.Api.Domain.UnitTests
+namespace Trustly.Api.Client.UnitTests
 {
     public class JsonRpcSignerTest
     {
         [Test]
         public void TestSerializingDeposit()
         {
-            var serializer = new Serializer();
             var factory = new JsonRpcFactory();
             var testAssembly = typeof(JsonRpcSignerTest).Assembly;
 
@@ -27,8 +26,6 @@ namespace Trustly.Api.Domain.UnitTests
                 }
             }
 
-            var signer = new JsonRpcSigner(serializer, settings);
-
             var requestData = new DepositRequestData
             {
                 NotificationURL = "localhost:1000",
@@ -41,6 +38,7 @@ namespace Trustly.Api.Domain.UnitTests
                 Attributes = new DepositRequestDataAttributes
                 {
                     Amount = "100.00",
+                    Currency = "SEK",
                     Country = "SE",
                     Firstname = "John",
                     Lastname = "Doe",
@@ -49,19 +47,23 @@ namespace Trustly.Api.Domain.UnitTests
 
             var jsonRpcRequest = factory.Create(requestData, "Deposit", "258a2184-2842-b485-25ca-293525152425");
 
+            var serializer = new Serializer();
+
             var serialized = serializer.SerializeData(jsonRpcRequest.Params.Data);
-            var expectedSerialized = "AttributesAmount100.00CountrySEFirstnameJohnLastnameDoeEndUserID127.0.0.1MessageID82bdbc09-7605-4265-b416-1e9549397eddNotificationURLlocalhost:1000Passworda6e404c9-7ca8-1204-863d-5642e27c2747Usernameteam_ceres";
+            var expectedSerialized = "AttributesAmount100.00CountrySECurrencySEKFirstnameJohnLastnameDoeEndUserID127.0.0.1MessageID82bdbc09-7605-4265-b416-1e9549397eddNotificationURLlocalhost:1000Passworda6e404c9-7ca8-1204-863d-5642e27c2747Usernameteam_ceres";
 
             Assert.AreEqual(expectedSerialized, serialized);
 
+            var signer = new JsonRpcSigner(serializer, settings);
+
             var plaintext = signer.CreatePlaintext(serialized, jsonRpcRequest.Method, jsonRpcRequest.Params.UUID);
-            var expectedPlaintext = "Deposit258a2184-2842-b485-25ca-293525152425AttributesAmount100.00CountrySEFirstnameJohnLastnameDoeEndUserID127.0.0.1MessageID82bdbc09-7605-4265-b416-1e9549397eddNotificationURLlocalhost:1000Passworda6e404c9-7ca8-1204-863d-5642e27c2747Usernameteam_ceres";
+            var expectedPlaintext = "Deposit258a2184-2842-b485-25ca-293525152425AttributesAmount100.00CountrySECurrencySEKFirstnameJohnLastnameDoeEndUserID127.0.0.1MessageID82bdbc09-7605-4265-b416-1e9549397eddNotificationURLlocalhost:1000Passworda6e404c9-7ca8-1204-863d-5642e27c2747Usernameteam_ceres";
 
             Assert.AreEqual(expectedPlaintext, plaintext);
 
             signer.Sign(jsonRpcRequest);
 
-            var expectedSignature = "p5kZihrxRIk7BYrUY0PsXcjhej/PJIo9TRlIR+SSBcMa1z9egJEhcvo9IJRkGbONJ0q9sWAbu2mc2qcHz0zDeP3KUQ41tTyykSMQpEoxEx/UtVWAJFB8g1XYbTLFKO6JMSKJFvOugrYwCEchRfs1dlayc0KY/y/vq6MP2EPAtgW7ZAdSbJryt+BgN42Bri0mdS+8H37KOKAZoOy7H14IwjbekH8qwQOzR9HhkTs3o5avYuKii/yCeAhm8U15ACmYMbIPPshQZ0vaUU9Q+EzAgTIaYbGslzHCWbq2DwdshmP2kSSJIGrw/ZSd2CjHdfTz2BWnKYsdQ/uYyAuidWZv+g==";
+            var expectedSignature = "xRed4cLfZs2L5WoJVHiRFvD9yTTvbT0i/BgfhitnTvX7DpfmAz9cmGs3wcTpfYanGlW6hkY7zg7esuaGjPr3NvsWxLGLKBxw97oS7KDmp/FFPnrYulle4MsmKFH5jPB1HMZn2kybXO7a/v1QhVkyKgPGtGSznMBmR8iObbkBGjKbaHdpzwUR2HBK0bomwjIdG7Qx25UMTkMU8a9iNpvwXI71zO9/97DQJK3UiXCicJLNReOTtqcxWL/gUi9h/H7tK6M5kDeNtyRolOhznVZLX/rkFg7exhRvjPk8nEGjMJ3B1O4nEm/xFM0fh4uqfv8QyZrYEzX/K7cfNXflax4n0g==";
 
             Assert.AreEqual(expectedSignature, jsonRpcRequest.Params.Signature);
         }

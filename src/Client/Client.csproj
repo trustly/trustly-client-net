@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Trustly.Api.Client</RootNamespace>
 
     <PackageId>trustly-api-client</PackageId>
@@ -31,6 +31,10 @@
   <ItemGroup>
     <None Remove="Keys\trustly_live_key.cer" />
     <None Remove="Keys\trustly_test_key.cer" />
+    <None Remove="CsvHelper" />
+    <None Remove="System.Linq.Async" />
+    <None Remove="Microsoft.Bcl.AsyncInterfaces" />
+    <None Remove="TinyCsvParser" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Keys\trustly_live_key.cer">

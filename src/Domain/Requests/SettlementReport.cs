@@ -47,7 +47,7 @@ namespace Trustly.Api.Domain.Requests
         /// <summary>
         /// The monetary amount of the transaction, rounded down to two decimal places.
         /// </summary>
-        public decimal Amount { get; set; }
+        public decimal? Amount { get; set; }
 
         /// <summary>
         /// The three-letter currency code of the transaction.
@@ -78,7 +78,7 @@ namespace Trustly.Api.Domain.Requests
         /// <summary>
         /// The sum of all amounts of the respective currency within the report.
         /// </summary>
-        public decimal Total { get; set; }
+        public decimal? Total { get; set; }
 
         /// <summary>
         /// The username of the child merchant account.
@@ -88,7 +88,7 @@ namespace Trustly.Api.Domain.Requests
         /// <summary>
         /// The amount that the end user paid, if the currency is different from the requested deposit currency. For transactions where the payment currency is the same as the requested currency, this field will be empty.
         /// </summary>
-        public decimal FxPaymentAmount { get; set; }
+        public decimal? FxPaymentAmount { get; set; }
 
         /// <summary>
         /// The currency that the user paid with, if the currency is different from the requested deposit currency. For transactions where the payment currency is the same as the requested currency, this field will be empty.
@@ -104,5 +104,10 @@ namespace Trustly.Api.Domain.Requests
         /// Contains the ExternalReference value for Deposit, Charge, and Refund transactions if provided.Otherwise empty.
         /// </summary>
         public string ExternalReference { get; set; }
+
+        public string ExtraRef {
+            get { return this.ExternalReference; }
+            set { this.ExternalReference = value; }
+        }
     }
 }

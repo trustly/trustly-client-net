@@ -1,17 +1,16 @@
 using System;
 using System.IO;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using Trustly.Api.Client;
+using Trustly.Api.Domain.Base;
 using Trustly.Api.Domain.Exceptions;
 using Trustly.Api.Domain.Notifications;
 
-namespace Client.Tests
+namespace Trustly.Api.Client.Tests
 {
     public class NotificationTests
     {
@@ -50,7 +49,7 @@ namespace Client.Tests
         }
 
         [Test]
-        public void TestNotificationHandlerFromRequest()
+        public async Task TestNotificationHandlerFromRequest()
         {
             var receivedDebitNotifications = 0;
             client.OnDebit += (sender, args) =>
@@ -59,7 +58,7 @@ namespace Client.Tests
             };
 
             var mockRequest = this.CreateMockDebitNotificationRequest();
-            client.HandleNotificationFromRequest(mockRequest.Object);
+            await client.HandleNotificationFromRequestAsync(mockRequest.Object);
 
             Assert.AreEqual(1, receivedDebitNotifications);
         }
@@ -79,9 +78,10 @@ namespace Client.Tests
             var mockResponse = new Mock<HttpResponse>();
 
             mockResponse.SetupAllProperties();
+            mockResponse.Setup(r => r.Headers).Returns(new HeaderDictionary());
 
-            mockHttpContext.Setup(x => x.Request).Returns(() => mockRequest.Object);
-            mockHttpContext.Setup(x => x.Response).Returns(() => mockResponse.Object);
+            mockHttpContext.Setup(x => x.Request).Returns(mockRequest.Object);
+            mockHttpContext.Setup(x => x.Response).Returns(mockResponse.Object);
 
             await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null);
 
@@ -99,24 +99,19 @@ namespace Client.Tests
                 args.RespondWithFailed("Things went badly");
             };
 
-            var mockRequest = this.CreateMockDebitNotificationRequest();
-            var mockHttpContext = new Mock<HttpContext>();
-            var mockResponse = new Mock<HttpResponse>();
+            var mockHttpContext = new DefaultHttpContext();
+            this.SetHttpRequestProperties(mockHttpContext.Request);
+            mockHttpContext.Response.Body = new MemoryStream();
 
-            mockResponse.SetupAllProperties();
-
-            mockHttpContext.Setup(x => x.Request).Returns(() => mockRequest.Object);
-            mockHttpContext.Setup(x => x.Response).Returns(() => mockResponse.Object);
-
-            await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null);
+            await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext, null);
 
             Assert.AreEqual(1, receivedDebitNotifications);
-            Assert.AreEqual(500, mockResponse.Object.StatusCode);
+            Assert.AreEqual(500, mockHttpContext.Response.StatusCode);
 
-            using (var sr = new StreamReader(mockResponse.Object.Body))
+            mockHttpContext.Response.Body.Position = 0;
+            using (var sr = new StreamReader(mockHttpContext.Response.Body))
             {
                 var bodyString = sr.ReadToEnd();
-
                 Assert.IsTrue(bodyString.Contains("Things went badly"));
             }
         }
@@ -129,9 +124,10 @@ namespace Client.Tests
             var mockResponse = new Mock<HttpResponse>();
 
             mockResponse.SetupAllProperties();
+            mockResponse.Setup(r => r.Headers).Returns(new HeaderDictionary());
 
-            mockHttpContext.Setup(x => x.Request).Returns(() => mockRequest.Object);
-            mockHttpContext.Setup(x => x.Response).Returns(() => mockResponse.Object);
+            mockHttpContext.Setup(x => x.Request).Returns(mockRequest.Object);
+            mockHttpContext.Setup(x => x.Response).Returns(mockResponse.Object);
 
             Assert.ThrowsAsync<TrustlyNoNotificationListenerException>(async () =>
             {
@@ -150,16 +146,16 @@ namespace Client.Tests
 
             var mockRequest = this.CreateMockDebitNotificationRequest(method: "GET");
 
-            Assert.Throws<TrustlyNotificationException>(() =>
+            Assert.ThrowsAsync<TrustlyNotificationException>(async () =>
             {
-                client.HandleNotificationFromRequest(mockRequest.Object);
+                await client.HandleNotificationFromRequestAsync(mockRequest.Object);
             });
 
             Assert.AreEqual(0, receivedDebitNotifications);
         }
 
         [Test]
-        public void TestUnknownNotification()
+        public async Task TestUnknownNotification()
         {
             var receivedDebitNotifications = 0;
             var receivedUnknownNotifications = 0;
@@ -181,14 +177,14 @@ namespace Client.Tests
             };
 
             var mockRequest = this.CreateMockDebitNotificationRequest(rpcMethod: "blaha");
-            client.HandleNotificationFromRequest(mockRequest.Object);
+            await client.HandleNotificationFromRequestAsync(mockRequest.Object);
 
             Assert.AreEqual(0, receivedDebitNotifications);
             Assert.AreEqual(1, receivedUnknownNotifications);
         }
 
         [Test]
-        public void TestAccountNotification()
+        public async Task TestAccountNotification()
         {
             // TODO: It seems you cannot validate the signature of Account Notification. Needs to be fixed.
 
@@ -200,46 +196,159 @@ namespace Client.Tests
             };
 
             var mockRequest = this.CreateMockAccountNotificationRequest();
-            client.HandleNotificationFromRequest(mockRequest.Object);
+            await client.HandleNotificationFromRequestAsync(mockRequest.Object);
 
             Assert.AreEqual(1, receivedCount);
         }
 
+        [Test]
+        public void TestExpectedNotificationSerialization()
+        {
+            var requestJson = ""
+                + "{\n"
+                + "    \"method\": \"account\",\n"
+                + "    \"version\": \"1.1\",\n"
+                + "    \"params\": {\n"
+                //     Incorrect signature
+                + "        \"signature\": \"qP1KOXErOUguNVPtGhmvv2SxQzRUOOdaM7oH6Oh+T6V4jKXyScyIQLb7FD4iSmIPXnWLv5X8TmeOBCnJtsdDmW7bcueK65VVCzIjs88HxJC37axgTOWBn8T4EDOOuRnC0MeKJFEDf5mDRXg/iRSJOsYg2JC5WFi4Ht4imuxAogYzqrYoCeuy2Vcn0fkD2oOGac6zVlkX6Q4Z+lAE36jxU+mvcTULHK7tBbpBfebN7I8tSm4xMjcZUF+F3h2Gkb3rQwkgx7GDf0wuPmIJ8uW5dfuDVHsoOPl3VqEln/NZX2L/KhjzDhnl6vNHil1iqWZQLtu4nErNA9sUwU87nPsl+w==\",\n"
+                + "        \"uuid\": \"be7e6b93-13b9-4b8f-89e3-0ad8258db94c\",\n"
+                + "        \"data\": {\n"
+                + "            \"orderid\": \"7520047953\",\n"
+                + "            \"verified\": \"0\",\n"
+                + "            \"accountid\": \"4052851907\",\n"
+                + "            \"messageid\": \"100137003A703263176\",\n"
+                + "            \"attributes\": {\n"
+                + "              \"bank\": \"Commerzbank\",\n"
+                + "              \"descriptor\": \"****************441300\",\n"
+                + "              \"lastdigits\": \"441300\",\n"
+                + "              \"clearinghouse\": \"GERMANY\"\n"
+                + "            }\n"
+                + "        }\n"
+                + "    }\n"
+                + "}";
+            var expectedSerialization = "accountid4052851907attributesbankCommerzbankclearinghouseGERMANYdescriptor****************441300lastdigits441300messageid100137003A703263176notificationidorderid7520047953verified0";
+
+            var rpcRequest = JsonConvert.DeserializeObject<JsonRpcRequest<AccountNotificationData>>(requestJson);
+
+            var serializer = new Serializer();
+            var serializedData = serializer.SerializeData(rpcRequest.Params.Data);
+
+            Assert.AreEqual(expectedSerialization, serializedData);
+        }
+
+        [Test]
+        public void TestExpectedNotificationSerializationWithEmptyAttributes()
+        {
+            var requestJson = ""
+                + "{\n"
+                + "    \"method\": \"account\",\n"
+                + "    \"version\": \"1.1\",\n"
+                + "    \"params\": {\n"
+                //     Incorrect signature
+                + "        \"signature\": \"qP1KOXErOUguNVPtGhmvv2SxQzRUOOdaM7oH6Oh+T6V4jKXyScyIQLb7FD4iSmIPXnWLv5X8TmeOBCnJtsdDmW7bcueK65VVCzIjs88HxJC37axgTOWBn8T4EDOOuRnC0MeKJFEDf5mDRXg/iRSJOsYg2JC5WFi4Ht4imuxAogYzqrYoCeuy2Vcn0fkD2oOGac6zVlkX6Q4Z+lAE36jxU+mvcTULHK7tBbpBfebN7I8tSm4xMjcZUF+F3h2Gkb3rQwkgx7GDf0wuPmIJ8uW5dfuDVHsoOPl3VqEln/NZX2L/KhjzDhnl6vNHil1iqWZQLtu4nErNA9sUwU87nPsl+w==\",\n"
+                + "        \"uuid\": \"be7e6b93-13b9-4b8f-89e3-0ad8258db94c\",\n"
+                + "        \"data\": {\n"
+                + "            \"orderid\": \"7520047953\",\n"
+                + "            \"verified\": \"0\",\n"
+                + "            \"accountid\": \"4052851907\",\n"
+                + "            \"messageid\": \"100137003A703263176\",\n"
+                + "            \"attributes\": {\n"
+                + "            }\n"
+                + "        }\n"
+                + "    }\n"
+                + "}";
+            var expectedSerialization = "accountid4052851907attributesmessageid100137003A703263176notificationidorderid7520047953verified0";
+
+            var rpcRequest = JsonConvert.DeserializeObject<JsonRpcRequest<AccountNotificationData>>(requestJson);
+
+            var serializer = new Serializer();
+            var serializedData = serializer.SerializeData(rpcRequest.Params.Data);
+
+            Assert.AreEqual(expectedSerialization, serializedData);
+        }
+
+        [Test]
+        public void TestExpectedNotificationSerializationWithNullAttributes()
+        {
+            var requestJson = ""
+                + "{\n"
+                + "    \"method\": \"account\",\n"
+                + "    \"version\": \"1.1\",\n"
+                + "    \"params\": {\n"
+                //     Incorrect signature
+                + "        \"signature\": \"qP1KOXErOUguNVPtGhmvv2SxQzRUOOdaM7oH6Oh+T6V4jKXyScyIQLb7FD4iSmIPXnWLv5X8TmeOBCnJtsdDmW7bcueK65VVCzIjs88HxJC37axgTOWBn8T4EDOOuRnC0MeKJFEDf5mDRXg/iRSJOsYg2JC5WFi4Ht4imuxAogYzqrYoCeuy2Vcn0fkD2oOGac6zVlkX6Q4Z+lAE36jxU+mvcTULHK7tBbpBfebN7I8tSm4xMjcZUF+F3h2Gkb3rQwkgx7GDf0wuPmIJ8uW5dfuDVHsoOPl3VqEln/NZX2L/KhjzDhnl6vNHil1iqWZQLtu4nErNA9sUwU87nPsl+w==\",\n"
+                + "        \"uuid\": \"be7e6b93-13b9-4b8f-89e3-0ad8258db94c\",\n"
+                + "        \"data\": {\n"
+                + "            \"orderid\": \"7520047953\",\n"
+                + "            \"verified\": \"0\",\n"
+                + "            \"accountid\": \"4052851907\",\n"
+                + "            \"messageid\": \"100137003A703263176\"\n"
+                + "        }\n"
+                + "    }\n"
+                + "}";
+            var expectedSerialization = "accountid4052851907messageid100137003A703263176notificationidorderid7520047953verified0";
+
+            var rpcRequest = JsonConvert.DeserializeObject<JsonRpcRequest<AccountNotificationData>>(requestJson);
+
+            var serializer = new Serializer();
+            var serializedData = serializer.SerializeData(rpcRequest.Params.Data);
+
+            Assert.AreEqual(expectedSerialization, serializedData);
+        }
+
         private Mock<HttpRequest> CreateMockDebitNotificationRequest(string method = "POST", string rpcMethod = "debit")
         {
-            Mock<HttpRequest> mockRequest = new Mock<HttpRequest>();
-
+            var mockRequest = new Mock<HttpRequest>();
             mockRequest.SetupAllProperties();
 
-            mockRequest.Setup(x => x.Body).Returns(() =>
-            {
-                var json = JsonConvert.SerializeObject(
-                    client.CreateRequestPackage(
-                        new DebitNotificationData
-                        {
-                            Amount = "100.00",
-                            Currency = "EUR",
-                            EnduserID = "user@email.com",
-                            MessageID = Guid.NewGuid().ToString(),
-                            OrderID = Guid.NewGuid().ToString(),
-                            NotificationID = Guid.NewGuid().ToString(),
-                            Timestamp = "2021-01-01 01:01:01"
-                        },
-                        rpcMethod
-                    )
-                );
-
-                var byteArray = Encoding.UTF8.GetBytes(json);
-                var stream = new MemoryStream(byteArray);
-                stream.Flush();
-                stream.Position = 0;
-
-                return stream;
-            });
-            mockRequest.Setup(x => x.Method).Returns(() => method);
-            mockRequest.Setup(x => x.Path).Returns("/trustly/notifications");
+            this.SetHttpRequestProperties(mockRequest.Object, method, rpcMethod);
 
             return mockRequest;
+        }
+
+        private void SetHttpRequestProperties(HttpRequest request, string method = "POST", string rpcMethod = "debit")
+        {
+            Stream stream;
+
+            if (rpcMethod == "debit")
+            {
+                stream = this.CreateMockDebitNotificationRequestBody(rpcMethod);
+            }
+            else
+            {
+                // We will fallback on a mocked debit notification if the Rpc Method is not known.
+                // That way we will simulate a request, but the method is incorrect/unknown on server.
+                stream = this.CreateMockDebitNotificationRequestBody(rpcMethod);
+            }
+
+            stream.Flush();
+            stream.Position = 0;
+
+            request.Body = stream;
+            request.Method = method;
+            request.Path = "/trustly/notifications";
+        }
+
+        private Stream CreateMockDebitNotificationRequestBody(String rpcMethod)
+        {
+            var json = JsonConvert.SerializeObject(
+                client.CreateRequestPackage(
+                    new DebitNotificationData
+                    {
+                        Amount = "100.00",
+                        Currency = "EUR",
+                        EnduserID = "user@email.com",
+                        MessageID = Guid.NewGuid().ToString(),
+                        OrderID = Guid.NewGuid().ToString(),
+                        NotificationID = Guid.NewGuid().ToString(),
+                        Timestamp = "2021-01-01 01:01:01"
+                    },
+                    rpcMethod
+                )
+            );
+
+            var byteArray = Encoding.UTF8.GetBytes(json);
+            return new MemoryStream(byteArray);
         }
 
         private Mock<HttpRequest> CreateMockAccountNotificationRequest(string method = "POST")

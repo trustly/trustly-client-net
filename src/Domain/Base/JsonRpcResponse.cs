@@ -27,7 +27,19 @@ namespace Trustly.Api.Domain.Base
 
         public IData GetData()
         {
-            return IsSuccessfulResult() ? Result.Data : Error?.Error?.Data;
+            if (this.IsSuccessfulResult())
+            {
+                return this.Result.Data;
+            }
+            else
+            {
+                if (this.Error != null && this.Error.Error != null)
+                {
+                    return this.Error.Error.Data;
+                }
+            }
+
+            return null;
         }
 
         public string GetMethod()
