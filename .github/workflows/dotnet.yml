@@ -9,7 +9,11 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
+
+    #strategy:
+    #  matrix:
+    #    dotnet: [ '4.5.x', '5.0.x' ]
 
     steps:
     - uses: actions/checkout@v2

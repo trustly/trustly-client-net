@@ -9,7 +9,7 @@ namespace Trustly.Api.Domain.Common
         public override bool ReadJson(JsonReader reader, Type objectType, bool existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             var valueString = (reader.Value ?? "").ToString();
-            if (string.Equals("1", valueString, StringComparison.InvariantCultureIgnoreCase))
+            if (string.Equals("1", valueString))
             {
                 return true;
             }
