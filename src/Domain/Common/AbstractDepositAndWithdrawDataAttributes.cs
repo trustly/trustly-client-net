@@ -6,7 +6,7 @@ using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Common
 {
-    public abstract class AbstractDepositAndWithdrawDataAttributes : AbstractRequestParamsDataAttributes
+    public abstract class AbstractDepositAndWithdrawAndSelectAccountDataAttributes : AbstractRequestParamsDataAttributes
     {
         /// <summary>
         /// The end-user's first name.
@@ -44,16 +44,6 @@ namespace Trustly.Api.Domain.Common
         public string Email { get; set; }
 
         /// <summary>
-        /// The minimum amount the end-user is allowed to deposit in the currency specified by Currency.Only digits. Use dot (.) as decimal separator.
-        /// </summary>
-        public string SuggestedMinAmount { get; set; }
-
-        /// <summary>
-        /// The maximum amount the end-user is allowed to deposit in the currency specified by Currency.Only digits. Use dot (.) as decimal separator.
-        /// </summary>
-        public string SuggestedMaxAmount { get; set; }
-
-        /// <summary>
         /// The IP-address of the end-user.
         /// </summary>
         public string IP { get; set; }
@@ -61,11 +51,13 @@ namespace Trustly.Api.Domain.Common
         /// <summary>
         /// The URL to which the end-user should be redirected after a successful deposit. Do not put any logic on that page since it's not guaranteed that the end-user will in fact visit it.
         /// </summary>
+        /// <example>https://example.com/thank_you.html</example>
         public string SuccessURL { get; set; }
 
         /// <summary>
         /// The URL to which the end-user should be redirected after a failed deposit. Do not put any logic on that page since it's not guaranteed that the end-user will in fact visit it.
         /// </summary>
+        /// <example>https://trustly.com/error.html</example>
         public string FailURL { get; set; }
 
         /// <summary>
@@ -100,5 +92,18 @@ namespace Trustly.Api.Domain.Common
         /// If you are using Trustly from within your native iOS app, this attribute should be sent so that we can redirect the users back to your app in case an external app is used for authentication (for example Mobile Bank ID in Sweden).
         /// </summary>
         public string URLScheme { get; set; }
+    }
+
+    public abstract class AbstractDepositAndWithdrawDataAttributes : AbstractDepositAndWithdrawAndSelectAccountDataAttributes
+    {
+        /// <summary>
+        /// The minimum amount the end-user is allowed to deposit in the currency specified by Currency.Only digits. Use dot (.) as decimal separator.
+        /// </summary>
+        public string SuggestedMinAmount { get; set; }
+
+        /// <summary>
+        /// The maximum amount the end-user is allowed to deposit in the currency specified by Currency.Only digits. Use dot (.) as decimal separator.
+        /// </summary>
+        public string SuggestedMaxAmount { get; set; }
     }
 }

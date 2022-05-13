@@ -119,6 +119,16 @@ namespace Trustly.Api.Client
             return this.SendRequest<RefundRequestData, RefundResponseData>(request, "Refund", uuid);
         }
 
+        public CreateAccountResponseData CreateAccount(CreateAccountRequestData request, string uuid = null)
+        {
+            return this.SendRequest<CreateAccountRequestData, CreateAccountResponseData>(request, "CreateAccount", uuid);
+        }
+
+        public SelectAccountResponseData SelectAccount(SelectAccountRequestData request, string uuid = null)
+        {
+            return this.SendRequest<SelectAccountRequestData, SelectAccountResponseData>(request, "SelectAccount", uuid);
+        }
+
         public SettlementReportResponseData SettlementReport(SettlementReportRequestData request, string uuid = null)
         {
             var response = this.SendRequest<SettlementReportRequestData, SettlementReportResponseData>(request, "ViewAutomaticSettlementDetailsCSV", uuid);

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.OpenSsl;
 
 namespace Trustly.Api.Client
@@ -315,14 +316,44 @@ namespace Trustly.Api.Client
             using (var publicReader = new StreamReader(publicFileStream))
             {
                 var publicPemReader = new PemReader(publicReader);
-                var publicKeyPair = (AsymmetricKeyParameter)publicPemReader.ReadObject();
+                var publicObject = publicPemReader.ReadObject();
+
+                AsymmetricKeyParameter publicKey;
+                if (publicObject is AsymmetricCipherKeyPair)
+                {
+                    publicKey = (publicObject as AsymmetricCipherKeyPair).Public;
+                }
+                else if (publicObject is AsymmetricKeyParameter)
+                {
+                    publicKey = publicObject as AsymmetricKeyParameter;
+                }
+                else
+                {
+                    throw new ArgumentException("The given public cipher file must be either a Key Pair or a Key Parameter, it is: " + publicObject);
+                }
 
                 using (var privateReader = new StreamReader(privateFileStream))
                 {
-                    var privatePemReader = new PemReader(privateReader);
-                    var privateKeyPair = (AsymmetricCipherKeyPair)privatePemReader.ReadObject();
 
-                    return new WithClientCertificates(this.Settings, publicKeyPair, privateKeyPair.Private);
+                    var privatePemReader = new PemReader(privateReader);
+                    var privateObject = privatePemReader.ReadObject();
+
+                    AsymmetricKeyParameter privateKey;
+                    if (privateObject is AsymmetricCipherKeyPair)
+                    {
+                        privateKey = (privateObject as AsymmetricCipherKeyPair).Private;
+                    }
+                    else if (privateObject is AsymmetricKeyParameter)
+                    {
+                        privateKey = privateObject as AsymmetricKeyParameter;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("The given private cipher file must be either a Key Pair or a Key Parameter, it is: " + privateObject);
+                    }
+
+
+                    return new WithClientCertificates(this.Settings, publicKey, privateKey);
                 }
             }
         }

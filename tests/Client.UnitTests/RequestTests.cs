@@ -3,6 +3,8 @@ using NUnit.Framework;
 using Trustly.Api.Client;
 using Trustly.Api.Domain.Exceptions;
 using System.Threading.Tasks;
+using Trustly.Api.Domain.Base;
+using Newtonsoft.Json;
 
 namespace Trustly.Api.Client.Tests
 {
@@ -28,6 +30,42 @@ namespace Trustly.Api.Client.Tests
 
             Assert.NotNull(response);
             Assert.NotNull(response.Entries);
+        }
+
+        private class FooAttributes : AbstractRequestParamsDataAttributes
+        {
+            public string NationalIdentificationNumber { get; set; }
+        }
+
+        private class FooRequestData : AbstractToTrustlyRequestParamsData<FooAttributes>
+        {
+            public string EndUserID { get; set; }
+            public string ClearingHouse { get; set; }
+        }
+
+        private class FooResponse : AbstractResponseResultData
+        {
+            [JsonProperty("descriptor")]
+            public string Descriptor { get; set; }
+        }
+
+        [Test]
+        public void TestCustomInvalidFunction()
+        {
+            var ex = Assert.Throws<TrustlyDataException>(() =>
+            {
+                var response = client.SendRequest<FooRequestData, FooResponse>(new FooRequestData
+                {
+                    EndUserID = "123",
+                    ClearingHouse = "CLRNGHS",
+                    Attributes = new FooAttributes
+                    {
+                        NationalIdentificationNumber = "870604-6615"
+                    }
+                }, "Foo", Guid.NewGuid().ToString());
+            });
+
+            Assert.AreEqual("ERROR_INVALID_FUNCTION", ex.ResponseError.Message);
         }
 
         [Test]
