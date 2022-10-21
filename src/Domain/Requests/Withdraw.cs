@@ -98,6 +98,30 @@ namespace Trustly.Api.Domain.Requests
         public string Address { get; set; }
 
         /// <summary>
+        /// The ExternalReference is a reference set by the merchant for any purpose and does not need to be unique for every API call.
+        /// The ExternalReference will be included in version 1.2 of the settlement report, ViewAutomaticSettlementDetailsCSV.
+        /// </summary>
+        public string ExternalReference { get; set; }
+
+        /// <summary>
+        /// Human-readable identifier of the consumer-facing merchant (e.g. legal name or trade name)
+        /// <remarks>Mandatory attribute for Trustly Partners that are using Express Merchant Onboarding (EMO) and aggregate traffic under a master processing account.</remarks>
+        /// </summary>
+        public string PSPMerchant { get; set; }
+
+        /// <summary>
+        /// URL of the consumer-facing website where the order is initiated
+        /// <remarks>Mandatory attribute for Trustly Partners that are using Express Merchant Onboarding (EMO) and aggregate traffic under a master processing account.</remarks>
+        /// </summary>
+        public string PSPMerchantURL { get; set; }
+
+        /// <summary>
+        /// VISA category codes describing the merchant's nature of business.
+        /// <remarks>Mandatory attribute for Trustly Partners that are using Express Merchant Onboarding (EMO) and aggregate traffic under a master processing account.</remarks>
+        /// </summary>
+        public string MerchantCategoryCode { get; set; }
+
+        /// <summary>
         /// Information about the Payer (ultimate debtor).
         ///
         /// Mandatory for certain types of merchants and partners.
