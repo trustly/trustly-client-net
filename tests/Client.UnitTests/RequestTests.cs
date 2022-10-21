@@ -175,6 +175,39 @@ namespace Trustly.Api.Client.Tests
         }
 
         [Test]
+        public void TestRegisterAccount()
+        {
+            var response = client.RegisterAccount(new Trustly.Api.Domain.Requests.RegisterAccountRequestData
+            {
+                EndUserID = "123123",
+                ClearingHouse = "SWEDEN",
+                BankNumber = "6112",
+                AccountNumber = "69706212",
+                Firstname = "Steve",
+                Lastname = "Smith",
+                Attributes = new Trustly.Api.Domain.Requests.RegisterAccountRequestDataAttributes
+                {
+                    DateOfBirth = "1979-01-31",
+                    MobilePhone = "+46709876543",
+                    NationalIdentificationNumber = "790131-1234",
+                    AddressCountry = "SE",
+                    AddressPostalCode = "SE-11253",
+                    AddressCity = "Stockholm",
+                    AddressLine1 = "Main street 1",
+                    AddressLine2 = "Apartment 123",
+                    Address = "Birgerstreet 14, SE-11411 Stockholm, Sweden",
+                    Email = "test@trustly.com"
+                }
+            });
+
+            Assert.NotNull(response);
+            Assert.AreEqual(response.Descriptor, "**706212");
+            Assert.AreEqual(response.ClearingHouse, "SWEDEN");
+            Assert.AreEqual(response.Bank, "Handelsbanken");
+        }
+
+
+        [Test]
         public void TestDeposit()
         {
             var response = client.Deposit(new Trustly.Api.Domain.Requests.DepositRequestData

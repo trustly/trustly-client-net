@@ -10,6 +10,6 @@
     <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="WireMock.Net" Version="1.4.10" />
+    <PackageReference Include="WireMock.Net" Version="1.5.8" />
   </ItemGroup>
 </Project>

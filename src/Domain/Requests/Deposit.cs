@@ -113,18 +113,26 @@ namespace Trustly.Api.Domain.Requests
 
         /// <summary>
         /// Human-readable identifier of the consumer-facing merchant (e.g. legal name or trade name)
+        /// <remarks>Mandatory attribute for Trustly Partners that are using Express Merchant Onboarding (EMO) and aggregate traffic under a master processing account. It is also mandatory for E-wallets used directly in a merchant's checkout.</remarks>
         /// </summary>
         public string PSPMerchant { get; set; }
 
         /// <summary>
         /// URL of the consumer-facing website where the order is initiated
+        /// <remarks>Mandatory attribute for Trustly Partners that are using Express Merchant Onboarding (EMO) and aggregate traffic under a master processing account. It is also mandatory for E-wallets used directly in a merchant's checkout.</remarks>
         /// </summary>
         public string PSPMerchantURL { get; set; }
 
         /// <summary>
         /// VISA category codes describing the merchant's nature of business.
+        /// <remarks>Mandatory attribute for Trustly Partners that are using Express Merchant Onboarding (EMO) and aggregate traffic under a master processing account. It is also mandatory for E-wallets used directly in a merchant's checkout.</remarks>
         /// </summary>
         public string MerchantCategoryCode { get; set; }
+
+        /// <summary>
+        /// The AccountID of a returning customer. Allows for a quicker payment experience in some markets, see Trustly Express.
+        /// </summary>
+        public string AccountID { get; set; }
 
         /// <summary>
         /// Information about the Payee (ultimate creditor).

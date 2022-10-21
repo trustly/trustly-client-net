@@ -108,5 +108,23 @@ namespace Trustly.Api.Domain.Requests
         /// </summary>
         /// <example>32423534523</example>
         public string ExternalReference { get; set; }
+
+        /// <summary>
+        /// Human-readable identifier of the consumer-facing merchant (e.g. legal name or trade name)
+        /// <remarks>Mandatory attribute for Trustly Partners that are using Express Merchant Onboarding (EMO) and aggregate traffic under a master processing account.</remarks>
+        /// </summary>
+        public string PSPMerchant { get; set; }
+
+        /// <summary>
+        /// URL of the consumer-facing website where the order is initiated
+        /// <remarks>Mandatory attribute for Trustly Partners that are using Express Merchant Onboarding (EMO) and aggregate traffic under a master processing account.</remarks>
+        /// </summary>
+        public string PSPMerchantURL { get; set; }
+
+        /// <summary>
+        /// VISA category codes describing the merchant's nature of business.
+        /// <remarks>Mandatory attribute for Trustly Partners that are using Express Merchant Onboarding (EMO) and aggregate traffic under a master processing account.</remarks>
+        /// </summary>
+        public string MerchantCategoryCode { get; set; }
     }
 }
