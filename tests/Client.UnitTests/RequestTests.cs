@@ -174,11 +174,6 @@ namespace Trustly.Api.Client.Tests
             Assert.AreEqual("ERROR_NOT_FOUND", ex.ResponseError.Message);
         }
 
-
-
-
-
-
         [Test]
         public void TestRegisterAccount()
         {
@@ -208,13 +203,8 @@ namespace Trustly.Api.Client.Tests
             Assert.NotNull(response);
             Assert.AreEqual(response.Descriptor, "**706212");
             Assert.AreEqual(response.ClearingHouse, "SWEDEN");
-            Assert.AreEqual(response.Bank, "Handelsbanken");       }
-
-
-
-
-
-
+            Assert.AreEqual(response.Bank, "Handelsbanken");
+        }
 
 
         [Test]
