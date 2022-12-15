@@ -206,6 +206,42 @@ namespace Trustly.Api.Client.Tests
             Assert.AreEqual(response.Bank, "Handelsbanken");
         }
 
+        [Test]
+        public void TestRegisterAccountPayout()
+        {
+            var response = client.RegisterAccountPayout(new Trustly.Api.Domain.Requests.RegisterAccountPayoutRequestData
+            {
+                EndUserID = "123123",
+                ClearingHouse = "SWEDEN",
+                BankNumber = "6112",
+                AccountNumber = "69706212",
+                Firstname = "Steve",
+                Lastname = "Smith",
+                NotificationURL = "https://fake.test.notification.trustly.com",
+                MessageID = Guid.NewGuid().ToString(),
+                Currency = "SEK",
+                Amount = "100.1",
+
+                Attributes = new Trustly.Api.Domain.Requests.RegisterAccountPayoutRequestDataAttributes
+                {
+                    DateOfBirth = "1979-01-31",
+                    MobilePhone = "+46709876543",
+                    NationalIdentificationNumber = "790131-1234",
+                    AddressCountry = "SE",
+                    AddressPostalCode = "SE-11253",
+                    AddressCity = "Stockholm",
+                    AddressLine1 = "Main street 1",
+                    AddressLine2 = "Apartment 123",
+                    Address = "Birgerstreet 14, SE-11411 Stockholm, Sweden",
+                    Email = "test@trustly.com",
+                    ShopperStatement = "A Shopper Statement"
+                }
+            });
+
+            Assert.NotNull(response);
+            Assert.NotNull(response.OrderID);
+        }
+
 
         [Test]
         public void TestDeposit()
