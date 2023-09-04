@@ -41,6 +41,11 @@ namespace Trustly.Api.Client
                         {
                             responseCount++;
                             await Respond(client, context.Response, rpcMethod, uuid, "FAILED", message, HttpStatusCode.InternalServerError);
+                        },
+                        onCustomStatus: async (rpcMethod, uuid, customStatus, message) =>
+                        {
+                            responseCount++;
+                            await Respond(client, context.Response, rpcMethod, uuid, customStatus, message, HttpStatusCode.OK);
                         }
                     );
                 }
