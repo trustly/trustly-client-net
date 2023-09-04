@@ -32,24 +32,26 @@ namespace Trustly.Api.Client
         public event EventHandler<NotificationArgs<DebitNotificationData>> OnDebit;
         public event EventHandler<NotificationArgs<PayoutConfirmationNotificationData>> OnPayoutConfirmation;
         public event EventHandler<NotificationArgs<PendingNotificationData>> OnPending;
+        public event EventHandler<NotificationArgs<KycNotificationData>> OnKyc;
         public event EventHandler<NotificationArgs<UnknownNotificationData>> OnUnknownNotification;
 
-        private readonly Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, int>> _methodToNotificationMapper
-            = new Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, int>>();
+        private readonly Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, NotificationCustomResponseDelegate, int>> _methodToNotificationMapper
+            = new Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, NotificationCustomResponseDelegate, int>>();
 
         public TrustlyApiClient(TrustlyApiClientSettings settings)
         {
             this.Settings = settings;
             this._signer = new JsonRpcSigner(serializer, this.Settings);
 
-            this._methodToNotificationMapper.Add("account", (json, ok, error) => this.HandleNotificationFromString(json, this.OnAccount, ok, error));
-            this._methodToNotificationMapper.Add("cancel", (json, ok, error) => this.HandleNotificationFromString(json, this.OnCancel, ok, error));
-            this._methodToNotificationMapper.Add("credit", (json, ok, error) => this.HandleNotificationFromString(json, this.OnCredit, ok, error));
-            this._methodToNotificationMapper.Add("debit", (json, ok, error) => this.HandleNotificationFromString(json, this.OnDebit, ok, error));
-            this._methodToNotificationMapper.Add("payoutconfirmation", (json, ok, error) => this.HandleNotificationFromString(json, this.OnPayoutConfirmation, ok, error));
-            this._methodToNotificationMapper.Add("pending", (json, ok, error) => this.HandleNotificationFromString(json, this.OnPending, ok, error));
+            this._methodToNotificationMapper.Add("account", (json, ok, error, customStatus) => this.HandleNotificationFromString(json, this.OnAccount, ok, error, customStatus));
+            this._methodToNotificationMapper.Add("cancel", (json, ok, error, customStatus) => this.HandleNotificationFromString(json, this.OnCancel, ok, error, customStatus));
+            this._methodToNotificationMapper.Add("credit", (json, ok, error, customStatus) => this.HandleNotificationFromString(json, this.OnCredit, ok, error, customStatus));
+            this._methodToNotificationMapper.Add("debit", (json, ok, error, customStatus) => this.HandleNotificationFromString(json, this.OnDebit, ok, error, customStatus));
+            this._methodToNotificationMapper.Add("payoutconfirmation", (json, ok, error, customStatus) => this.HandleNotificationFromString(json, this.OnPayoutConfirmation, ok, error, customStatus));
+            this._methodToNotificationMapper.Add("pending", (json, ok, error, customStatus) => this.HandleNotificationFromString(json, this.OnPending, ok, error, customStatus));
+            this._methodToNotificationMapper.Add("kyc", (json, ok, error, customStatus) => this.HandleNotificationFromString(json, this.OnKyc, ok, error, customStatus));
 
-            this._methodToNotificationMapper.Add(string.Empty, (json, ok, error) => this.HandleNotificationFromString(json, this.OnUnknownNotification, ok, error));
+            this._methodToNotificationMapper.Add(string.Empty, (json, ok, error, customStatus) => this.HandleNotificationFromString(json, this.OnUnknownNotification, ok, error, customStatus));
 
             TrustlyApiClient._staticRegisteredClients.Add(this);
         }
@@ -258,14 +260,15 @@ namespace Trustly.Api.Client
             return rpcResponse.Result.Data;
         }
 
-        public async Task<int> HandleNotificationFromRequestAsync(HttpRequest request, NotificationResponseDelegate onOK = null, NotificationFailResponseDelegate onFailed = null)
+        public async Task<int> HandleNotificationFromRequestAsync(HttpRequest request, NotificationResponseDelegate onOK = null, 
+            NotificationFailResponseDelegate onFailed = null, NotificationCustomResponseDelegate onCustomStatus = null)
         {
             if (string.Equals(request.Method, "post", StringComparison.InvariantCultureIgnoreCase))
             {
                 using (var sr = new StreamReader(request.Body))
                 {
                     var requestStringBody = await sr.ReadToEndAsync();
-                    return this.HandleNotificationFromString(requestStringBody, onOK, onFailed);
+                    return this.HandleNotificationFromString(requestStringBody, onOK, onFailed, onCustomStatus);
                 }
             }
             else
@@ -274,7 +277,7 @@ namespace Trustly.Api.Client
             }
         }
 
-        public int HandleNotificationFromString(string jsonString, NotificationResponseDelegate onOK = null, NotificationFailResponseDelegate onFailed = null)
+        public int HandleNotificationFromString(string jsonString, NotificationResponseDelegate onOK = null, NotificationFailResponseDelegate onFailed = null, NotificationCustomResponseDelegate onCustomStatus = null)
         {
             var jsonToken = JToken.Parse(jsonString);
 
@@ -287,14 +290,15 @@ namespace Trustly.Api.Client
 
             // This will then call generic method HandleNotificationFromString below.
             // We do it this way to keep the dynamic generic parameters intact.
-            return mapper(jsonString, onOK, onFailed);
+            return mapper(jsonString, onOK, onFailed, onCustomStatus);
         }
 
         private int HandleNotificationFromString<TReqData>(
                 string jsonString,
                 EventHandler<NotificationArgs<TReqData>> eventHandler,
                 NotificationResponseDelegate onOK,
-                NotificationFailResponseDelegate onFailed
+                NotificationFailResponseDelegate onFailed,
+                NotificationCustomResponseDelegate onCustomStatus
             )
             where TReqData : IRequestParamsData
         {
@@ -318,7 +322,7 @@ namespace Trustly.Api.Client
 
             try
             {
-                eventHandler(this, new NotificationArgs<TReqData>(rpcRequest.Params.Data, rpcRequest.Method, rpcRequest.Params.UUID, onOK, onFailed));
+                eventHandler(this, new NotificationArgs<TReqData>(rpcRequest.Params.Data, rpcRequest.Method, rpcRequest.Params.UUID, onOK, onFailed, onCustomStatus));
             }
             catch (Exception ex)
             {
