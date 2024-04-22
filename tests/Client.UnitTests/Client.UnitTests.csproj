@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFrameworks>net472</TargetFrameworks>
 
     <IsPackable>false</IsPackable>
     <RootNamespace>Trustly.Api.Client.UnitTests</RootNamespace>
