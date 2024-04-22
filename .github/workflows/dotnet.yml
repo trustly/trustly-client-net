@@ -11,16 +11,12 @@ jobs:
 
     runs-on: windows-latest
 
-    #strategy:
-    #  matrix:
-    #    dotnet: [ '4.5.x', '5.0.x' ]
-
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 8.0.x
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
