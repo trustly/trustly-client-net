@@ -8,6 +8,8 @@ namespace Trustly.Api.Client
 
     public delegate Task NotificationFailResponseDelegate(string method, string uuid, string message);
 
+    public delegate Task NotificationCustomResponseDelegate(string method, string uuid, string status, string message);
+
     public class NotificationArgs<TData>
         where TData : IRequestParamsData
     {
@@ -18,8 +20,10 @@ namespace Trustly.Api.Client
 
         private readonly NotificationResponseDelegate _onOK;
         private readonly NotificationFailResponseDelegate _onFailed;
+        private readonly NotificationCustomResponseDelegate _onCustomStatus;
 
-        public NotificationArgs(TData data, string method, string uuid, NotificationResponseDelegate onOK, NotificationFailResponseDelegate onFailed)
+        public NotificationArgs(TData data, string method, string uuid, NotificationResponseDelegate onOK, NotificationFailResponseDelegate onFailed,
+            NotificationCustomResponseDelegate onCustomStatus)
         {
             this.Data = data;
 
@@ -28,6 +32,7 @@ namespace Trustly.Api.Client
 
             this._onOK = onOK;
             this._onFailed = onFailed;
+            this._onCustomStatus = onCustomStatus;
         }
 
         public void RespondWithOK()
@@ -38,6 +43,11 @@ namespace Trustly.Api.Client
         public void RespondWithFailed(string message)
         {
             this._onFailed(this._method, this._uuid, message);
+        }
+
+        public void RespondWithCustomStatus(string status, string message)
+        {
+            this._onCustomStatus(this._method, this._uuid, status, message);
         }
     }
 }
