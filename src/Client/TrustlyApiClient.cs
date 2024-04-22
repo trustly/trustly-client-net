@@ -26,6 +26,8 @@ namespace Trustly.Api.Client
         private readonly JsonRpcSigner _signer;
         private readonly JsonRpcValidator _validator = new JsonRpcValidator();
 
+        public Func<string, WebRequest> RequestCreator { get; set; }
+
         public event EventHandler<NotificationArgs<AccountNotificationData>> OnAccount;
         public event EventHandler<NotificationArgs<CancelNotificationData>> OnCancel;
         public event EventHandler<NotificationArgs<CreditNotificationData>> OnCredit;
@@ -329,6 +331,11 @@ namespace Trustly.Api.Client
             return eventHandler.GetInvocationList().Length;
         }
 
+        protected virtual WebRequest CreateWebRequest(string url)
+        {
+            return WebRequest.Create(url);
+        }
+
         /// <summary>
         /// Sends an HTTP POST to Trustly server.
         /// </summary>
@@ -337,7 +344,7 @@ namespace Trustly.Api.Client
         protected string NewHttpPost(string request)
         {
             var requestBytes = Encoding.UTF8.GetBytes(request);
-            var httpWebRequest = (HttpWebRequest)WebRequest.Create(this.Settings.URL);
+            var httpWebRequest = (this.RequestCreator ?? this.CreateWebRequest)(this.Settings.URL);
 
             httpWebRequest.ContentType = "application/json";
             httpWebRequest.ContentLength = requestBytes.Length;
@@ -353,7 +360,7 @@ namespace Trustly.Api.Client
                 }
             }
 
-            var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+            var httpResponse = httpWebRequest.GetResponse();
 
             var responseStream = httpResponse.GetResponseStream();
             if (responseStream == null)
