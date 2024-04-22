@@ -5,6 +5,7 @@ using Trustly.Api.Domain.Exceptions;
 using System.Threading.Tasks;
 using Trustly.Api.Domain.Base;
 using Newtonsoft.Json;
+using System.Net;
 
 namespace Trustly.Api.Client.Tests
 {
@@ -266,6 +267,45 @@ namespace Trustly.Api.Client.Tests
 
             Assert.NotNull(response);
             Assert.IsFalse(string.IsNullOrEmpty(response.URL));
+        }
+
+        [Test]
+        public void TestDepositWithCustomProxyClient()
+        {
+            var callCount = 0;
+            var proxyClient = new TrustlyApiClient(TrustlyApiClientSettings.ForDefaultTest())
+            {
+                RequestCreator = url =>
+                {
+                    callCount++;
+                    var request = WebRequest.Create(url);
+                    request.Proxy = new WebProxy();
+
+                    return request;
+                }
+            };
+
+            var response = proxyClient.Deposit(new Trustly.Api.Domain.Requests.DepositRequestData
+            {
+                NotificationURL = "https://fake.test.notification.trustly.com",
+                MessageID = Guid.NewGuid().ToString(),
+                EndUserID = "pontus.eliason@trustly.com",
+                Attributes = new Trustly.Api.Domain.Requests.DepositRequestDataAttributes
+                {
+                    Amount = "100.00",
+                    Firstname = "John",
+                    Lastname = "Doe",
+                    Email = "pontus.eliason@trustly.com",
+                    Currency = "EUR",
+                    Country = "SE",
+                    Locale = "sv_SE",
+                    ShopperStatement = "Trustly Test Deposit"
+                }
+            });
+
+            Assert.NotNull(response);
+            Assert.IsFalse(string.IsNullOrEmpty(response.URL));
+            Assert.AreEqual(1, callCount);
         }
 
         [Test]
