@@ -1,43 +1,33 @@
 ﻿using System;
-using Trustly.Api.Domain.Base;
 using System.Threading.Tasks;
 
 namespace Trustly.Api.Client
 {
-    public delegate Task NotificationResponseDelegate(string method, string uuid);
+    public delegate Task NotificationAckDelegate<TAckData>(TAckData data);
+    public delegate Task NotificationRespondDelegate(string stringBody);
 
-    public delegate Task NotificationFailResponseDelegate(string method, string uuid, string message);
-
-    public class NotificationArgs<TData>
-        where TData : IRequestParamsData
+    public class NotificationArgs<TNotificationData, TAckData>
     {
-        public TData Data { get; }
+        public TNotificationData Data { get; }
 
-        private readonly string _method;
-        private readonly string _uuid;
+        internal string Method { get; private set; }
+        internal string UUID { get; private set; }
 
-        private readonly NotificationResponseDelegate _onOK;
-        private readonly NotificationFailResponseDelegate _onFailed;
+        internal NotificationAckDelegate<TAckData> Callback { get; private set; }
 
-        public NotificationArgs(TData data, string method, string uuid, NotificationResponseDelegate onOK, NotificationFailResponseDelegate onFailed)
+        public NotificationArgs(TNotificationData data, string method, string uuid, NotificationAckDelegate<TAckData> callback)
         {
             this.Data = data;
 
-            this._method = method;
-            this._uuid = uuid;
+            this.Method = method;
+            this.UUID = uuid;
 
-            this._onOK = onOK;
-            this._onFailed = onFailed;
+            this.Callback = callback;
         }
 
-        public void RespondWithOK()
+        public void Respond(TAckData result)
         {
-            this._onOK(this._method, this._uuid);
-        }
-
-        public void RespondWithFailed(string message)
-        {
-            this._onFailed(this._method, this._uuid, message);
+            this.Callback(result);
         }
     }
 }

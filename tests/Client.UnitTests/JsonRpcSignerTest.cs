@@ -1,7 +1,7 @@
 using System;
 using NUnit.Framework;
 using Trustly.Api.Client;
-using Trustly.Api.Domain.Requests;
+using Trustly.Api.Domain;
 
 namespace Trustly.Api.Client.UnitTests
 {
@@ -40,32 +40,37 @@ namespace Trustly.Api.Client.UnitTests
                     Amount = "100.00",
                     Currency = "SEK",
                     Country = "SE",
+                    Locale = "sv_SE",
                     Firstname = "John",
                     Lastname = "Doe",
+                    Email = "test@trustly.com",
+                    SuccessURL = "https://google.com?q=success",
+                    FailURL = "https://google.com?q=fail",
+                    ShopperStatement = "Shop",
                 }
             };
 
-            var jsonRpcRequest = factory.Create(requestData, "Deposit", "258a2184-2842-b485-25ca-293525152425");
+            var jsonRpcRequest = factory.Create<DepositRequestDataAttributes, DepositRequestData>(requestData, "Deposit", "e43f9dd4-e0ee-4c0a-9464-b962d590cfac");
 
             var serializer = new Serializer();
 
-            var serialized = serializer.SerializeData(jsonRpcRequest.Params.Data);
-            var expectedSerialized = "AttributesAmount100.00CountrySECurrencySEKFirstnameJohnLastnameDoeEndUserID127.0.0.1MessageID82bdbc09-7605-4265-b416-1e9549397eddNotificationURLlocalhost:1000Passworda6e404c9-7ca8-1204-863d-5642e27c2747Usernameteam_ceres";
+            var serialized = serializer.SerializeData(jsonRpcRequest.Params.Data, true);
+            var expectedSerialized = "AttributesAmount100.00CountrySECurrencySEKEmailtest@trustly.comFailURLhttps://google.com?q=failFirstnameJohnLastnameDoeLocalesv_SEShopperStatementShopSuccessURLhttps://google.com?q=successEndUserID127.0.0.1MessageID82bdbc09-7605-4265-b416-1e9549397eddNotificationURLlocalhost:1000Passworda6e404c9-7ca8-1204-863d-5642e27c2747Usernameteam_ceres";
 
-            Assert.AreEqual(expectedSerialized, serialized);
+            Assert.That(serialized, Is.EqualTo(expectedSerialized));
 
             var signer = new JsonRpcSigner(serializer, settings);
 
             var plaintext = signer.CreatePlaintext(serialized, jsonRpcRequest.Method, jsonRpcRequest.Params.UUID);
-            var expectedPlaintext = "Deposit258a2184-2842-b485-25ca-293525152425AttributesAmount100.00CountrySECurrencySEKFirstnameJohnLastnameDoeEndUserID127.0.0.1MessageID82bdbc09-7605-4265-b416-1e9549397eddNotificationURLlocalhost:1000Passworda6e404c9-7ca8-1204-863d-5642e27c2747Usernameteam_ceres";
+            var expectedPlaintext = "Deposite43f9dd4-e0ee-4c0a-9464-b962d590cfacAttributesAmount100.00CountrySECurrencySEKEmailtest@trustly.comFailURLhttps://google.com?q=failFirstnameJohnLastnameDoeLocalesv_SEShopperStatementShopSuccessURLhttps://google.com?q=successEndUserID127.0.0.1MessageID82bdbc09-7605-4265-b416-1e9549397eddNotificationURLlocalhost:1000Passworda6e404c9-7ca8-1204-863d-5642e27c2747Usernameteam_ceres";
 
-            Assert.AreEqual(expectedPlaintext, plaintext);
+            Assert.That(plaintext, Is.EqualTo(expectedPlaintext));
 
-            signer.Sign(jsonRpcRequest);
+            var actualSignature = signer.CreateSignature(jsonRpcRequest.Method, jsonRpcRequest.Params.UUID, jsonRpcRequest.Params.Data);
 
-            var expectedSignature = "xRed4cLfZs2L5WoJVHiRFvD9yTTvbT0i/BgfhitnTvX7DpfmAz9cmGs3wcTpfYanGlW6hkY7zg7esuaGjPr3NvsWxLGLKBxw97oS7KDmp/FFPnrYulle4MsmKFH5jPB1HMZn2kybXO7a/v1QhVkyKgPGtGSznMBmR8iObbkBGjKbaHdpzwUR2HBK0bomwjIdG7Qx25UMTkMU8a9iNpvwXI71zO9/97DQJK3UiXCicJLNReOTtqcxWL/gUi9h/H7tK6M5kDeNtyRolOhznVZLX/rkFg7exhRvjPk8nEGjMJ3B1O4nEm/xFM0fh4uqfv8QyZrYEzX/K7cfNXflax4n0g==";
+            var expectedSignature = "09zQ00rONzJK+j1Yc+q85SvKmQsGUT9uyysdsARPukhSRaFLmH84k/LW0hbW619GoV/DwAr3s/zQvFM5b8fT+SW9GX0Mf9OpMcK45RuEPlK+E2RBYPZhrKpb47RLeLmGMlI2dSmNc8kxotFh1zwQf2h8WWh1IGwmLobqn+Uun+AbC+uxi7PRkiqKBhRZtZlUPxyvUm05xd33RuB2uDrjEVeTQK9i99fO/EML/IviAQL4SebI6LfmfrP8HitkKvgcpjzVTCkkOwbb9spe/xLX8N/zRtdl7rUAAKBkyOtMuPoHjj1/F7BmPfTXnfAOBOeeWlEkDLcEzb8/agBH02H2GQ==";
 
-            Assert.AreEqual(expectedSignature, jsonRpcRequest.Params.Signature);
+            Assert.That(actualSignature, Is.EqualTo(expectedSignature));
         }
     }
 }

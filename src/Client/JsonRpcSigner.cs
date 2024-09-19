@@ -1,9 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Text;
-using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Security;
-using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Client
 {
@@ -25,20 +22,7 @@ namespace Trustly.Api.Client
             return string.Format("{0}{1}{2}", method, uuid, serializedData);
         }
 
-        public void Sign<TData>(JsonRpcRequest<TData> request)
-            where TData : IRequestParamsData
-        {
-            request.Params.Signature = this.CreateSignature(request.Method, request.Params.UUID, request.Params.Data);
-        }
-
-        public void Sign<TData>(JsonRpcResponse<TData> response)
-            where TData : IResponseResultData
-        {
-            response.Result.Signature = this.CreateSignature(response.GetMethod(), response.GetUUID(), response.GetData());
-        }
-
-        private string CreateSignature<TData>(string method, string uuid, TData data)
-            where TData : IData
+        public string CreateSignature(string method, string uuid, object data)
         {
             var serializedData = this._serializer.SerializeData(data);
             var plainText = this.CreatePlaintext(serializedData, method, uuid);
@@ -54,19 +38,7 @@ namespace Trustly.Api.Client
             return Convert.ToBase64String(signedBytes);
         }
 
-        public bool Verify<TData>(JsonRpcRequest<TData> request)
-        where TData : IRequestParamsData
-        {
-            return this.Verify(request.Method, request.Params.UUID, request.Params.Signature, request.Params.Data);
-        }
-
-        public bool Verify<TData>(JsonRpcResponse<TData> response)
-            where TData : IResponseResultData
-        {
-            return this.Verify(response.GetMethod(), response.GetUUID(), response.GetSignature(), response.GetData());
-        }
-
-        private bool Verify(string method, string uuid, string expectedSignature, IData data)
+        public bool Verify<TData>(string method, string uuid, TData data, string expectedSignature)
         {
             var serializedResponseData = this._serializer.SerializeData(data);
             var responsePlainText = this.CreatePlaintext(serializedResponseData, method, uuid);

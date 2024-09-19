@@ -6,9 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Moq;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using Trustly.Api.Domain.Base;
+using Trustly.Api.Domain;
 using Trustly.Api.Domain.Exceptions;
-using Trustly.Api.Domain.Notifications;
 
 namespace Trustly.Api.Client.Tests
 {
@@ -42,12 +41,6 @@ namespace Trustly.Api.Client.Tests
             this.client = new TrustlyApiClient(settings);
         }
 
-        [TearDown]
-        public void TearDown()
-        {
-            this.client.Dispose();
-        }
-
         [Test]
         public async Task TestNotificationHandlerFromRequest()
         {
@@ -58,9 +51,9 @@ namespace Trustly.Api.Client.Tests
             };
 
             var mockRequest = this.CreateMockDebitNotificationRequest();
-            await client.HandleNotificationFromRequestAsync(mockRequest.Object);
+            await client.HandleNotificationFromRequestAsync(mockRequest.Object, str => Task.Delay(TimeSpan.MinValue));
 
-            Assert.AreEqual(1, receivedDebitNotifications);
+            Assert.That(receivedDebitNotifications, Is.EqualTo(1));
         }
 
         [Test]
@@ -70,23 +63,28 @@ namespace Trustly.Api.Client.Tests
             client.OnDebit += (sender, args) =>
             {
                 receivedDebitNotifications++;
-                args.RespondWithOK();
+                args.Respond(new DebitNotificationResponseData
+                {
+                    Status = DebitNotificationResponseDataStatus.OK
+                });
             };
 
             var mockRequest = this.CreateMockDebitNotificationRequest();
             var mockHttpContext = new Mock<HttpContext>();
             var mockResponse = new Mock<HttpResponse>();
+            var responseStream = new MemoryStream();
 
             mockResponse.SetupAllProperties();
-            mockResponse.Setup(r => r.Headers).Returns(new HeaderDictionary());
+            mockResponse.Setup(_ => _.Headers).Returns(new HeaderDictionary());
+            mockResponse.Setup(_ => _.Body).Returns(responseStream);
 
-            mockHttpContext.Setup(x => x.Request).Returns(mockRequest.Object);
-            mockHttpContext.Setup(x => x.Response).Returns(mockResponse.Object);
+            mockHttpContext.Setup(_ => _.Request).Returns(mockRequest.Object);
+            mockHttpContext.Setup(_ => _.Response).Returns(mockResponse.Object);
 
-            await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null);
+            await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null, client);
 
-            Assert.AreEqual(1, receivedDebitNotifications);
-            Assert.AreEqual(200, mockResponse.Object.StatusCode);
+            Assert.That(receivedDebitNotifications, Is.EqualTo(1));
+            Assert.That(mockResponse.Object.StatusCode, Is.EqualTo(200));
         }
 
         [Test]
@@ -96,23 +94,59 @@ namespace Trustly.Api.Client.Tests
             client.OnDebit += (sender, args) =>
             {
                 receivedDebitNotifications++;
-                args.RespondWithFailed("Things went badly");
+                throw new InvalidOperationException("Things went badly");
             };
 
             var mockHttpContext = new DefaultHttpContext();
             this.SetHttpRequestProperties(mockHttpContext.Request);
             mockHttpContext.Response.Body = new MemoryStream();
 
-            await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext, null);
+            await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext, null, client);
 
-            Assert.AreEqual(1, receivedDebitNotifications);
-            Assert.AreEqual(500, mockHttpContext.Response.StatusCode);
+            Assert.That(receivedDebitNotifications, Is.EqualTo(1));
+            Assert.That(mockHttpContext.Response.StatusCode, Is.EqualTo(500));
 
             mockHttpContext.Response.Body.Position = 0;
             using (var sr = new StreamReader(mockHttpContext.Response.Body))
             {
                 var bodyString = sr.ReadToEnd();
-                Assert.IsTrue(bodyString.Contains("Things went badly"));
+                Assert.That(bodyString, Is.EqualTo(TrustlyApiClientExtensions.GENERIC_ERROR_MESSAGE));
+            }
+        }
+
+        [Test]
+        public async Task TestNotificationHandlerFromMiddlewareRequestWithInternalErrorResponse()
+        {
+            var receivedDebitNotifications = 0;
+            var previous = client.Settings.IncludeExceptionMessageInNotificationResponse;
+            try
+            {
+                client.Settings.IncludeExceptionMessageInNotificationResponse = true;
+                client.OnDebit += (sender, args) =>
+                {
+                    receivedDebitNotifications++;
+                    throw new InvalidOperationException("Things went badly");
+                };
+
+                var mockHttpContext = new DefaultHttpContext();
+                this.SetHttpRequestProperties(mockHttpContext.Request);
+                mockHttpContext.Response.Body = new MemoryStream();
+
+                await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext, null, client);
+
+                Assert.That(receivedDebitNotifications, Is.EqualTo(1));
+                Assert.That(500, Is.EqualTo(mockHttpContext.Response.StatusCode));
+
+                mockHttpContext.Response.Body.Position = 0;
+                using (var sr = new StreamReader(mockHttpContext.Response.Body))
+                {
+                    var bodyString = sr.ReadToEnd();
+                    Assert.That(bodyString, Is.EqualTo("Things went badly"));
+                }
+            }
+            finally
+            {
+                client.Settings.IncludeExceptionMessageInNotificationResponse = previous;
             }
         }
 
@@ -131,7 +165,7 @@ namespace Trustly.Api.Client.Tests
 
             Assert.ThrowsAsync<TrustlyNoNotificationListenerException>(async () =>
             {
-                await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null);
+                await TrustlyApiClientExtensions.HandleNotificationRequest(mockHttpContext.Object, null, client);
             });
         }
 
@@ -148,10 +182,10 @@ namespace Trustly.Api.Client.Tests
 
             Assert.ThrowsAsync<TrustlyNotificationException>(async () =>
             {
-                await client.HandleNotificationFromRequestAsync(mockRequest.Object);
+                await client.HandleNotificationFromRequestAsync(mockRequest.Object, str => Task.Delay(TimeSpan.MinValue));
             });
 
-            Assert.AreEqual(0, receivedDebitNotifications);
+            Assert.That(receivedDebitNotifications, Is.EqualTo(0));
         }
 
         [Test]
@@ -169,18 +203,21 @@ namespace Trustly.Api.Client.Tests
             {
                 receivedUnknownNotifications++;
 
-                Assert.IsFalse(args.Data.ExtensionData.ContainsKey("Amount"));
-                Assert.IsFalse(args.Data.ExtensionData.ContainsKey("EnduserID"));
+                Assert.That(args.Data.AdditionalProperties.ContainsKey("Amount"), Is.False);
+                Assert.That(args.Data.AdditionalProperties.ContainsKey("EnduserID"), Is.False);
 
-                Assert.AreEqual("100.00", args.Data.ExtensionData["amount"]);
-                Assert.AreEqual("user@email.com", args.Data.ExtensionData["enduserid"]);
+                Assert.That(args.Data.AdditionalProperties["Amount"], Is.Null);
+                Assert.That(args.Data.AdditionalProperties["EnduserID"], Is.Null);
+              
+                Assert.That(args.Data.AdditionalProperties.Value<String>("amount"), Is.EqualTo("100.00"));
+                Assert.That(args.Data.AdditionalProperties.Value<String>("enduserid"), Is.EqualTo("user@email.com"));
             };
 
             var mockRequest = this.CreateMockDebitNotificationRequest(rpcMethod: "blaha");
-            await client.HandleNotificationFromRequestAsync(mockRequest.Object);
+            await client.HandleNotificationFromRequestAsync(mockRequest.Object, str => Task.Delay(TimeSpan.MinValue));
 
-            Assert.AreEqual(0, receivedDebitNotifications);
-            Assert.AreEqual(1, receivedUnknownNotifications);
+            Assert.That(receivedDebitNotifications, Is.EqualTo(0));
+            Assert.That(receivedUnknownNotifications, Is.EqualTo(1));
         }
 
         [Test]
@@ -196,9 +233,9 @@ namespace Trustly.Api.Client.Tests
             };
 
             var mockRequest = this.CreateMockAccountNotificationRequest();
-            await client.HandleNotificationFromRequestAsync(mockRequest.Object);
+            await client.HandleNotificationFromRequestAsync(mockRequest.Object, str => Task.Delay(TimeSpan.MinValue));
 
-            Assert.AreEqual(1, receivedCount);
+            Assert.That(receivedCount, Is.EqualTo(1));
         }
 
         [Test]
@@ -217,6 +254,7 @@ namespace Trustly.Api.Client.Tests
                 + "            \"verified\": \"0\",\n"
                 + "            \"accountid\": \"4052851907\",\n"
                 + "            \"messageid\": \"100137003A703263176\",\n"
+                + "            \"notificationid\": \"123\",\n"
                 + "            \"attributes\": {\n"
                 + "              \"bank\": \"Commerzbank\",\n"
                 + "              \"descriptor\": \"****************441300\",\n"
@@ -226,14 +264,14 @@ namespace Trustly.Api.Client.Tests
                 + "        }\n"
                 + "    }\n"
                 + "}";
-            var expectedSerialization = "accountid4052851907attributesbankCommerzbankclearinghouseGERMANYdescriptor****************441300lastdigits441300messageid100137003A703263176notificationidorderid7520047953verified0";
+            var expectedSerialization = "accountid4052851907attributesbankCommerzbankclearinghouseGERMANYdescriptor****************441300lastdigits441300messageid100137003A703263176notificationid123orderid7520047953verified0";
 
-            var rpcRequest = JsonConvert.DeserializeObject<JsonRpcRequest<AccountNotificationData>>(requestJson);
+            var rpcRequest = JsonConvert.DeserializeObject<AccountDefaultNotification>(requestJson);
 
             var serializer = new Serializer();
-            var serializedData = serializer.SerializeData(rpcRequest.Params.Data);
+            var serializedData = serializer.SerializeData(rpcRequest.Params.Data, true);
 
-            Assert.AreEqual(expectedSerialization, serializedData);
+            Assert.That(serializedData, Is.EqualTo(expectedSerialization));
         }
 
         [Test]
@@ -252,19 +290,20 @@ namespace Trustly.Api.Client.Tests
                 + "            \"verified\": \"0\",\n"
                 + "            \"accountid\": \"4052851907\",\n"
                 + "            \"messageid\": \"100137003A703263176\",\n"
+                + "            \"notificationid\": \"123\",\n"
                 + "            \"attributes\": {\n"
                 + "            }\n"
                 + "        }\n"
                 + "    }\n"
                 + "}";
-            var expectedSerialization = "accountid4052851907attributesmessageid100137003A703263176notificationidorderid7520047953verified0";
+            var expectedSerialization = "accountid4052851907attributesmessageid100137003A703263176notificationid123orderid7520047953verified0";
 
-            var rpcRequest = JsonConvert.DeserializeObject<JsonRpcRequest<AccountNotificationData>>(requestJson);
+            var rpcRequest = JsonConvert.DeserializeObject<AccountDefaultNotification>(requestJson);
 
             var serializer = new Serializer();
             var serializedData = serializer.SerializeData(rpcRequest.Params.Data);
 
-            Assert.AreEqual(expectedSerialization, serializedData);
+            Assert.That(serializedData, Is.EqualTo(expectedSerialization));
         }
 
         [Test]
@@ -282,18 +321,19 @@ namespace Trustly.Api.Client.Tests
                 + "            \"orderid\": \"7520047953\",\n"
                 + "            \"verified\": \"0\",\n"
                 + "            \"accountid\": \"4052851907\",\n"
-                + "            \"messageid\": \"100137003A703263176\"\n"
+                + "            \"messageid\": \"100137003A703263176\",\n"
+                + "            \"notificationid\": \"123\"\n"
                 + "        }\n"
                 + "    }\n"
                 + "}";
-            var expectedSerialization = "accountid4052851907messageid100137003A703263176notificationidorderid7520047953verified0";
+            var expectedSerialization = "accountid4052851907messageid100137003A703263176notificationid123orderid7520047953verified0";
 
-            var rpcRequest = JsonConvert.DeserializeObject<JsonRpcRequest<AccountNotificationData>>(requestJson);
+            var rpcRequest = JsonConvert.DeserializeObject<AccountDefaultNotification>(requestJson);
 
             var serializer = new Serializer();
             var serializedData = serializer.SerializeData(rpcRequest.Params.Data);
 
-            Assert.AreEqual(expectedSerialization, serializedData);
+            Assert.That(serializedData, Is.EqualTo(expectedSerialization));
         }
 
         private Mock<HttpRequest> CreateMockDebitNotificationRequest(string method = "POST", string rpcMethod = "debit")
@@ -329,23 +369,43 @@ namespace Trustly.Api.Client.Tests
             request.Path = "/trustly/notifications";
         }
 
-        private Stream CreateMockDebitNotificationRequestBody(String rpcMethod)
+        public class DebitIshNotificationRequest : JsonRpcNotification<DebitDefaultNotificationData, JsonRpcNotificationParams<DebitDefaultNotificationData>>
         {
-            var json = JsonConvert.SerializeObject(
-                client.CreateRequestPackage(
-                    new DebitNotificationData
-                    {
-                        Amount = "100.00",
-                        Currency = "EUR",
-                        EnduserID = "user@email.com",
-                        MessageID = Guid.NewGuid().ToString(),
-                        OrderID = Guid.NewGuid().ToString(),
-                        NotificationID = Guid.NewGuid().ToString(),
-                        Timestamp = "2021-01-01 01:01:01"
-                    },
-                    rpcMethod
-                )
+            public DebitIshNotificationRequest(string rpcMethod) : base(rpcMethod) { }
+        }
+
+        private Stream CreateMockDebitNotificationRequestBody(string rpcMethod)
+        {
+            var debitParamsData = new DebitDefaultNotificationData
+            {
+                Amount = "100.00",
+                Currency = "EUR",
+                EndUserID = "user@email.com",
+                MessageID = Guid.NewGuid().ToString(),
+                OrderID = Guid.NewGuid().ToString(),
+                NotificationID = Guid.NewGuid().ToString(),
+                Timestamp = "2021-01-01 01:01:01"
+            };
+
+            var debitParams = new JsonRpcNotificationParams<DebitDefaultNotificationData>
+            {
+                UUID = Guid.NewGuid().ToString(),
+                Data = debitParamsData,
+            };
+
+            var debitNotification = new DebitIshNotificationRequest(rpcMethod)
+            {
+                 Params = debitParams,
+            };
+
+            debitNotification.Params.Signature = this.client.Signer.CreateSignature(
+                debitNotification.Method,
+                debitNotification.Params.UUID,
+                debitNotification.Params.Data
             );
+            //this._validator.Validate(debitNotification);
+
+            var json = JsonConvert.SerializeObject(debitNotification);
 
             var byteArray = Encoding.UTF8.GetBytes(json);
             return new MemoryStream(byteArray);
@@ -359,18 +419,18 @@ namespace Trustly.Api.Client.Tests
 
             mockRequest.Setup(x => x.Body).Returns(() =>
             {
-                var json = JsonConvert.SerializeObject(
-                    client.CreateRequestPackage(
-                        new AccountNotificationData
-                        {
+                var mandateNotification = new AccountMandateNotification {
+                     Params = new AccountMandateNotificationParams {
+                         UUID = Guid.NewGuid().ToString(),
+                         Data = new AccountMandateNotificationData {
                             MessageID = Guid.NewGuid().ToString(),
                             OrderID = Guid.NewGuid().ToString(),
                             NotificationID = Guid.NewGuid().ToString(),
                             AccountID = "123",
-                            Verified = "1",
-                            Attributes = new AccountNotificationDataAttributes
+                            Verified = StringBoolean.TRUE,
+                            Attributes = new AccountMandateNotificationDataAttributes
                             {
-                                Clearinghouse = "SWEDEN",
+                                ClearingHouse = "SWEDEN",
                                 Bank = "The Bank",
                                 Descriptor = "**** *084057",
                                 Lastdigits = "084057",
@@ -381,10 +441,18 @@ namespace Trustly.Api.Client.Tests
                                 City = "Examplecity",
                                 DirectDebitMandate = 0
                             }
-                        },
-                        "account"
-                    )
+                         }
+                     }
+                };
+
+                mandateNotification.Params.Signature = this.client.Signer.CreateSignature(
+                    mandateNotification.Method,
+                    mandateNotification.Params.UUID,
+                    mandateNotification.Params.Data
                 );
+                //this._validator.Validate(debitNotification);
+
+                var json = JsonConvert.SerializeObject(mandateNotification);
 
                 var byteArray = Encoding.UTF8.GetBytes(json);
                 var stream = new MemoryStream(byteArray);

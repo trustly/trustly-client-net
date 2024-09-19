@@ -1,21 +1,54 @@
 ﻿using System;
-using Trustly.Api.Domain.Base;
+using Trustly.Api.Domain;
 
 namespace Trustly.Api.Client
 {
     public class JsonRpcFactory
     {
-        public JsonRpcRequest<TReqData> Create<TReqData>(TReqData requestData, string method, string uuid = null)
-            where TReqData : IRequestParamsData
+        public JsonRpcRequest<TReqAttr, TReqData, JsonRpcRequestParams<TReqAttr, TReqData>> Create<TReqAttr, TReqData>(TReqData requestData, string method, string uuid = null)
+            where TReqAttr : AbstractRequestDataAttributes
+            where TReqData : AbstractRequestData<TReqAttr>
         {
-            return new JsonRpcRequest<TReqData>
+            return new JsonRpcRequest<TReqAttr, TReqData, JsonRpcRequestParams<TReqAttr, TReqData>>(method)
             {
-                Method = method,
-                Version = 1.1,
-                Params = new RequestParams<TReqData>
+                Params = new JsonRpcRequestParams<TReqAttr, TReqData>
                 {
                     UUID = uuid ?? Guid.NewGuid().ToString(),
                     Data = requestData
+                }
+            };
+        }
+
+
+        public JsonRpcResponse<TAckData, ResponseResult<TAckData>> CreateResponse<TReqData, TAckData>(
+            JsonRpcNotification<TReqData, JsonRpcNotificationParams<TReqData>> request,
+            TAckData data
+        )
+        {
+            return new JsonRpcResponse<TAckData, ResponseResult<TAckData>>()
+            {
+                Result = new ResponseResult<TAckData>
+                {
+                    Method = request.Method,
+                    Data = data,
+                    UUID = request.Params.UUID
+                }
+            };
+        }
+
+        public JsonRpcResponse<TAckData, ResponseResult<TAckData>> CreateResponse<TAckData>(
+            TAckData data,
+            string method,
+            string uuid
+        )
+        {
+            return new JsonRpcResponse<TAckData, ResponseResult<TAckData>>()
+            {
+                Result = new ResponseResult<TAckData>
+                {
+                    Method = method,
+                    Data = data,
+                    UUID = uuid
                 }
             };
         }

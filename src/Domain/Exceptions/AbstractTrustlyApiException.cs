@@ -1,5 +1,4 @@
 ﻿using System;
-using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Domain.Exceptions
 {
@@ -8,6 +7,6 @@ namespace Trustly.Api.Domain.Exceptions
         public AbstractTrustlyApiException(string message) : base(message) { }
         public AbstractTrustlyApiException(string message, Exception cause) : base(message, cause) { }
 
-        public ResponseError ResponseError { get; set; }
+        public JsonRpcError ResponseError { get; set; }
     }
 }
