@@ -29,7 +29,7 @@ namespace Trustly.Api.Client
             var request = context.Request;
             var contextPath = request.Path.Value.Trim(new[] { '/' });
 
-            if (string.Equals(contextPath, "trustly/notifications", StringComparison.InvariantCultureIgnoreCase))
+            if (string.Equals(contextPath, client.Settings.NotificationUrl ?? "trustly/notifications", StringComparison.InvariantCultureIgnoreCase))
             {
                 var responseCount = 0;
                 var includeErrorMessage = false;
