@@ -10,12 +10,12 @@ namespace Trustly.Api.Client
     {
         public string SerializeData<TData>(TData data, bool silent = false)
         {
-            JObject jsonObject;
+            JToken jsonObject;
             if (data is JToken token)
             {
                 // If the value to serialize is already a JToken, then we will assume it is an object.
                 // We can also work on the actual exact response, and not rely on flaky JSON -> DTO -> JSON -> String conversion.
-                jsonObject = (JObject) token;
+                jsonObject = (JToken) token;
             }
             else
             {
