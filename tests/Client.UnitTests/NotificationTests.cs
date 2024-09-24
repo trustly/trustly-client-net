@@ -266,7 +266,7 @@ namespace Trustly.Api.Client.Tests
                 + "}";
             var expectedSerialization = "accountid4052851907attributesbankCommerzbankclearinghouseGERMANYdescriptor****************441300lastdigits441300messageid100137003A703263176notificationid123orderid7520047953verified0";
 
-            var rpcRequest = JsonConvert.DeserializeObject<AccountDefaultNotification>(requestJson);
+            var rpcRequest = JsonConvert.DeserializeObject<AccountDefaultNotification>(requestJson, TrustlyApiClient.DEFAULT_SERIALIZER_SETTINGS);
 
             var serializer = new Serializer();
             var serializedData = serializer.SerializeData(rpcRequest.Params.Data, true);
@@ -298,7 +298,7 @@ namespace Trustly.Api.Client.Tests
                 + "}";
             var expectedSerialization = "accountid4052851907attributesmessageid100137003A703263176notificationid123orderid7520047953verified0";
 
-            var rpcRequest = JsonConvert.DeserializeObject<AccountDefaultNotification>(requestJson);
+            var rpcRequest = JsonConvert.DeserializeObject<AccountDefaultNotification>(requestJson, TrustlyApiClient.DEFAULT_SERIALIZER_SETTINGS);
 
             var serializer = new Serializer();
             var serializedData = serializer.SerializeData(rpcRequest.Params.Data);
@@ -328,7 +328,7 @@ namespace Trustly.Api.Client.Tests
                 + "}";
             var expectedSerialization = "accountid4052851907messageid100137003A703263176notificationid123orderid7520047953verified0";
 
-            var rpcRequest = JsonConvert.DeserializeObject<AccountDefaultNotification>(requestJson);
+            var rpcRequest = JsonConvert.DeserializeObject<AccountDefaultNotification>(requestJson, TrustlyApiClient.DEFAULT_SERIALIZER_SETTINGS);
 
             var serializer = new Serializer();
             var serializedData = serializer.SerializeData(rpcRequest.Params.Data);
@@ -403,9 +403,8 @@ namespace Trustly.Api.Client.Tests
                 debitNotification.Params.UUID,
                 debitNotification.Params.Data
             );
-            //this._validator.Validate(debitNotification);
 
-            var json = JsonConvert.SerializeObject(debitNotification);
+            var json = JsonConvert.SerializeObject(debitNotification, TrustlyApiClient.DEFAULT_SERIALIZER_SETTINGS);
 
             var byteArray = Encoding.UTF8.GetBytes(json);
             return new MemoryStream(byteArray);
@@ -450,9 +449,8 @@ namespace Trustly.Api.Client.Tests
                     mandateNotification.Params.UUID,
                     mandateNotification.Params.Data
                 );
-                //this._validator.Validate(debitNotification);
 
-                var json = JsonConvert.SerializeObject(mandateNotification);
+                var json = JsonConvert.SerializeObject(mandateNotification, TrustlyApiClient.DEFAULT_SERIALIZER_SETTINGS);
 
                 var byteArray = Encoding.UTF8.GetBytes(json);
                 var stream = new MemoryStream(byteArray);

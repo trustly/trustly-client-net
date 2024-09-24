@@ -15,6 +15,11 @@ namespace Trustly.Api.Client
 {
     public class TrustlyApiClient
     {
+        public static JsonSerializerSettings DEFAULT_SERIALIZER_SETTINGS = new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore
+        };
+
         public TrustlyApiClientSettings Settings { get; }
 
         private readonly JsonRpcFactory _objectFactory = new JsonRpcFactory();
@@ -37,10 +42,7 @@ namespace Trustly.Api.Client
 
         public TrustlyApiClient(TrustlyApiClientSettings settings)
         {
-            this.SerializerSettings = new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            };
+            this.SerializerSettings = TrustlyApiClient.DEFAULT_SERIALIZER_SETTINGS;
             this._serializer = new Serializer();
             this.Settings = settings;
             this.Signer = new JsonRpcSigner(_serializer, this.Settings);
@@ -248,7 +250,6 @@ namespace Trustly.Api.Client
             NotificationRespondDelegate callback
         )
         {
-
             if (eventHandler == null)
             {
                 return 0;
@@ -257,7 +258,7 @@ namespace Trustly.Api.Client
             var notification = token.ToObject<JsonRpcNotification<TNotificationData, JsonRpcNotificationParams<TNotificationData>>>();
 
             // Verify the notification (RpcRequest from Trustly) signature.
-            if (!this.Signer.Verify(notification.Method, notification.Params.UUID, notification.Params.Data, notification.Params.Signature))
+            if (!this.Signer.Verify(notification.Method, notification.Params.UUID, token["params"]["data"], notification.Params.Signature))
             {
                 throw new TrustlySignatureException("Could not validate signature of notification from Trustly. Is the public key for Trustly the correct one, for test or production?");
             }
