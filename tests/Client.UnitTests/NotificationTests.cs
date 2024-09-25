@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Trustly.Api.Domain;
 using Trustly.Api.Domain.Exceptions;
@@ -54,6 +55,17 @@ namespace Trustly.Api.Client.Tests
             await client.HandleNotificationFromRequestAsync(mockRequest.Object, str => Task.Delay(TimeSpan.MinValue));
 
             Assert.That(receivedDebitNotifications, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TestUnionDeserialization()
+        {
+            var body = this.CreateMockDebitNotificationRequestBodyString("debit");
+            var deserialized = JsonConvert.DeserializeObject<DebitNotification>(body);
+            var serializer = JsonSerializer.CreateDefault();
+            var data = deserialized.Params.Data.GetDebitDefaultNotificationData(serializer);
+
+            Assert.That(data.EndUserID, Is.EqualTo("user@email.com"));
         }
 
         [Test]
@@ -374,7 +386,7 @@ namespace Trustly.Api.Client.Tests
             public DebitIshNotificationRequest(string rpcMethod) : base(rpcMethod) { }
         }
 
-        private Stream CreateMockDebitNotificationRequestBody(string rpcMethod)
+        private string CreateMockDebitNotificationRequestBodyString(string rpcMethod)
         {
             var debitParamsData = new DebitDefaultNotificationData
             {
@@ -404,8 +416,12 @@ namespace Trustly.Api.Client.Tests
                 debitNotification.Params.Data
             );
 
-            var json = JsonConvert.SerializeObject(debitNotification, TrustlyApiClient.DEFAULT_SERIALIZER_SETTINGS);
+            return JsonConvert.SerializeObject(debitNotification, TrustlyApiClient.DEFAULT_SERIALIZER_SETTINGS);
+        }
 
+        private Stream CreateMockDebitNotificationRequestBody(string rpcMethod)
+        {
+            var json = this.CreateMockDebitNotificationRequestBodyString(rpcMethod);
             var byteArray = Encoding.UTF8.GetBytes(json);
             return new MemoryStream(byteArray);
         }

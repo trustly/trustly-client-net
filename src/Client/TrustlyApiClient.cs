@@ -33,7 +33,8 @@ namespace Trustly.Api.Client
         public event EventHandler<NotificationArgs<AccountDefaultNotificationData, AckData>> OnAccount;
         public event EventHandler<NotificationArgs<CancelDefaultNotificationData, AckData>> OnCancel;
         public event EventHandler<NotificationArgs<CreditDefaultNotificationData, AckData>> OnCredit;
-        public event EventHandler<NotificationArgs<DebitDefaultNotificationData, DebitNotificationResponseData>> OnDebit;
+        public event EventHandler<NotificationArgs<DebitDefaultNotificationData, DebitNotificationResponseData>> OnDefaultDebit;
+        public event EventHandler<NotificationArgs<DebitNotificationData, DebitNotificationResponseData>> OnDebit;
         public event EventHandler<NotificationArgs<PayoutConfirmationNotificationData, AckData>> OnPayoutConfirmation;
         public event EventHandler<NotificationArgs<PayoutFailedNotificationData, AckData>> OnPayoutFailed;
         public event EventHandler<NotificationArgs<PendingDefaultNotificationData, AckData>> OnPending;
