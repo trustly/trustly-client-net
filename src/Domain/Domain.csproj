@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net451</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net481</TargetFrameworks>
     <RootNamespace>Trustly.Api.Domain</RootNamespace>
 
     <PackageId>trustly-api-domain</PackageId>
