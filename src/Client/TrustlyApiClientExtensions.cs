@@ -1,96 +1,84 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
 using Trustly.Api.Domain.Exceptions;
-using Trustly.Api.Domain.Notifications;
+using Microsoft.Extensions.Primitives;
 
 namespace Trustly.Api.Client
 {
     public static class TrustlyApiClientExtensions
     {
-        public static void UseTrustlyNotifications(this IApplicationBuilder app)
+        public static readonly string GENERIC_ERROR_MESSAGE = "An exception occurred (error message given by trustly-api-client for .NET)";
+
+        private static readonly AssemblyName assemblyName = Assembly.GetExecutingAssembly().GetName();
+        private static readonly Version assemblyVersion = assemblyName.Version;
+
+        public static void UseTrustlyNotifications(this IApplicationBuilder app, TrustlyApiClient client)
         {
-            app.Use((context, next) => HandleNotificationRequest(context, next));
+            app.Use((context, next) =>
+            {
+                return HandleNotificationRequest(context, next, client);
+            });
         }
 
-        public async static Task HandleNotificationRequest(HttpContext context, Func<Task> next)
+        public async static Task HandleNotificationRequest(HttpContext context, Func<Task> next, TrustlyApiClient client)
         {
             var request = context.Request;
             var contextPath = request.Path.Value.Trim(new[] { '/' });
 
-            if (string.Equals(contextPath, "trustly/notifications", StringComparison.InvariantCultureIgnoreCase))
+            if (string.Equals(contextPath, client.Settings.NotificationUrl ?? "trustly/notifications", StringComparison.InvariantCultureIgnoreCase))
             {
                 var responseCount = 0;
-                var clientCount = 0;
-                foreach (var client in TrustlyApiClient.GetRegisteredClients())
+                var includeErrorMessage = false;
+
+                try
                 {
-                    clientCount++;
+                    includeErrorMessage = includeErrorMessage || client.Settings.IncludeExceptionMessageInNotificationResponse;
+
                     await client.HandleNotificationFromRequestAsync(
                         request,
-                        onOK: async (rpcMethod, uuid) =>
+                        async (stringBody) =>
                         {
                             responseCount++;
-                            await Respond(client, context.Response, rpcMethod, uuid, "OK", null, HttpStatusCode.OK);
-                        },
-                        onFailed: async (rpcMethod, uuid, message) =>
-                        {
-                            responseCount++;
-                            await Respond(client, context.Response, rpcMethod, uuid, "FAILED", message, HttpStatusCode.InternalServerError);
+
+                            context.Response.Headers.Add("User-Agent", new StringValues("trustly-api-client/" + assemblyVersion));
+                            context.Response.StatusCode = (int)HttpStatusCode.OK;
+                            await context.Response.WriteAsync(stringBody);
                         }
                     );
                 }
-
-                if (clientCount == 0)
+                catch (Exception ex)
                 {
-                    throw new TrustlyNoNotificationClientException("There are no registered Api Clients listening to notifications");
+                    context.Response.Headers.Add("User-Agent", new StringValues("trustly-api-client/" + assemblyVersion));
+                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+                    if (includeErrorMessage)
+                    {
+                        await context.Response.WriteAsync(ex.Message);
+                        responseCount++;
+                    }
+                    else
+                    {
+                        await context.Response.WriteAsync(GENERIC_ERROR_MESSAGE);
+                        responseCount++;
+                    }
                 }
 
                 if (responseCount == 0)
                 {
-                    throw new TrustlyNoNotificationClientException("None of your client's event listeners responded with OK or FAILED. That must be done.");
+                    throw new TrustlyNoNotificationListenerException("None of your clients' event listeners responded with acknowledge data. That must be done.");
                 }
             }
             else
             {
-                await next.Invoke();
-            }
-        }
-
-        public static async Task Respond(TrustlyApiClient client, HttpResponse response, string method, string uuid, string status, string message, HttpStatusCode httpStatusCode)
-        {
-            var rpcResponse = client.CreateResponsePackage(
-                method,
-                uuid,
-                new NotificationResponse
+                if (next != null)
                 {
-                    Status = status
-                }
-            );
-
-            if (client.Settings.IncludeMessageInNotificationResponse)
-            {
-                if (string.IsNullOrEmpty(message) == false)
-                {
-                    rpcResponse.Result.Data.ExtensionData = new Dictionary<string, object>
-                    {
-                        { "message", message }
-                    };
+                    await next.Invoke();
                 }
             }
-
-            var rpcString = JsonConvert.SerializeObject(rpcResponse);
-
-            var assemblyName = Assembly.GetExecutingAssembly().GetName();
-            var assemblyVersion = assemblyName.Version;
-
-            response.Headers.Add("User-Agent", new Microsoft.Extensions.Primitives.StringValues("trustly-api-client/" + assemblyVersion));
-            response.StatusCode = (int)httpStatusCode;
-            await response.WriteAsync(rpcString);
         }
     }
 }

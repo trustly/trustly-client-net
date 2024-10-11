@@ -17,6 +17,8 @@ namespace Trustly.Api.Client
         public string Username { get; set; }
         public string Password { get; set; }
 
+        public string NotificationUrl { get; set; }
+
         public AsymmetricKeyParameter ClientPublicKey { get; internal set; }
         public AsymmetricKeyParameter ClientPrivateKey { get; internal set; }
 

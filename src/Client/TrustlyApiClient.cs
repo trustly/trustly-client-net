@@ -8,153 +8,117 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Trustly.Api.Domain.Base;
+using Trustly.Api.Domain;
 using Trustly.Api.Domain.Exceptions;
-using Trustly.Api.Domain.Notifications;
-using Trustly.Api.Domain.Requests;
 
 namespace Trustly.Api.Client
 {
-    public class TrustlyApiClient : IDisposable
+    public class TrustlyApiClient
     {
-        private static readonly List<TrustlyApiClient> _staticRegisteredClients = new List<TrustlyApiClient>();
+        public static JsonSerializerSettings DEFAULT_SERIALIZER_SETTINGS = new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore
+        };
 
         public TrustlyApiClientSettings Settings { get; }
 
         private readonly JsonRpcFactory _objectFactory = new JsonRpcFactory();
-        private readonly Serializer serializer = new Serializer();
-        private readonly JsonRpcSigner _signer;
-        private readonly JsonRpcValidator _validator = new JsonRpcValidator();
+        private readonly Serializer _serializer;
+        private JsonRpcValidator Validator { get; } = new JsonRpcValidator();
 
         public Func<string, WebRequest> RequestCreator { get; set; }
+        public JsonRpcSigner Signer { get; }
+        private JsonSerializerSettings SerializerSettings { get; }
 
-        public event EventHandler<NotificationArgs<AccountNotificationData>> OnAccount;
-        public event EventHandler<NotificationArgs<CancelNotificationData>> OnCancel;
-        public event EventHandler<NotificationArgs<CreditNotificationData>> OnCredit;
-        public event EventHandler<NotificationArgs<DebitNotificationData>> OnDebit;
-        public event EventHandler<NotificationArgs<PayoutConfirmationNotificationData>> OnPayoutConfirmation;
-        public event EventHandler<NotificationArgs<PendingNotificationData>> OnPending;
-        public event EventHandler<NotificationArgs<UnknownNotificationData>> OnUnknownNotification;
-
-        private readonly Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, int>> _methodToNotificationMapper
-            = new Dictionary<string, Func<string, NotificationResponseDelegate, NotificationFailResponseDelegate, int>>();
+        public event EventHandler<NotificationArgs<AccountDefaultNotificationData, AckData>> OnAccount;
+        public event EventHandler<NotificationArgs<CancelDefaultNotificationData, AckData>> OnCancel;
+        public event EventHandler<NotificationArgs<CreditDefaultNotificationData, AckData>> OnCredit;
+        public event EventHandler<NotificationArgs<DebitDefaultNotificationData, DebitNotificationResponseData>> OnDefaultDebit;
+        public event EventHandler<NotificationArgs<DebitNotificationData, DebitNotificationResponseData>> OnDebit;
+        public event EventHandler<NotificationArgs<PayoutConfirmationNotificationData, AckData>> OnPayoutConfirmation;
+        public event EventHandler<NotificationArgs<PayoutFailedNotificationData, AckData>> OnPayoutFailed;
+        public event EventHandler<NotificationArgs<PendingDefaultNotificationData, AckData>> OnPending;
+        public event EventHandler<NotificationArgs<KYCNotificationData, KYCNotificationResponseData>> OnKYC;
+        public event EventHandler<NotificationArgs<Any, AckData>> OnUnknownNotification;
 
         public TrustlyApiClient(TrustlyApiClientSettings settings)
         {
+            this.SerializerSettings = TrustlyApiClient.DEFAULT_SERIALIZER_SETTINGS;
+            this._serializer = new Serializer();
             this.Settings = settings;
-            this._signer = new JsonRpcSigner(serializer, this.Settings);
-
-            this._methodToNotificationMapper.Add("account", (json, ok, error) => this.HandleNotificationFromString(json, this.OnAccount, ok, error));
-            this._methodToNotificationMapper.Add("cancel", (json, ok, error) => this.HandleNotificationFromString(json, this.OnCancel, ok, error));
-            this._methodToNotificationMapper.Add("credit", (json, ok, error) => this.HandleNotificationFromString(json, this.OnCredit, ok, error));
-            this._methodToNotificationMapper.Add("debit", (json, ok, error) => this.HandleNotificationFromString(json, this.OnDebit, ok, error));
-            this._methodToNotificationMapper.Add("payoutconfirmation", (json, ok, error) => this.HandleNotificationFromString(json, this.OnPayoutConfirmation, ok, error));
-            this._methodToNotificationMapper.Add("pending", (json, ok, error) => this.HandleNotificationFromString(json, this.OnPending, ok, error));
-
-            this._methodToNotificationMapper.Add(string.Empty, (json, ok, error) => this.HandleNotificationFromString(json, this.OnUnknownNotification, ok, error));
-
-            TrustlyApiClient._staticRegisteredClients.Add(this);
+            this.Signer = new JsonRpcSigner(_serializer, this.Settings);
         }
 
-        ~TrustlyApiClient()
-        {
-            TrustlyApiClient._staticRegisteredClients.Remove(this);
-        }
-
-        public void Dispose()
-        {
-            TrustlyApiClient._staticRegisteredClients.Remove(this);
-        }
-
-        public static IEnumerable<TrustlyApiClient> GetRegisteredClients()
-        {
-            return _staticRegisteredClients;
-        }
-
-        public AccountLedgerResponseData AccountLedger(AccountLedgerRequestData request, string uuid = null)
-        {
-            return this.SendRequest<AccountLedgerRequestData, AccountLedgerResponseData>(request, "AccountLedger", uuid);
-        }
-
+        public IList<AccountLedgerResponseDataEntry> AccountLedger(AccountLedgerRequestData request, string uuid = null)
+        => this.SendRequest<AnyAttributes, AccountLedgerRequestData, IList<AccountLedgerResponseDataEntry>>(request, "AccountLedger", uuid);
         public AccountPayoutResponseData AccountPayout(AccountPayoutRequestData request, string uuid = null)
-        {
-            return this.SendRequest<AccountPayoutRequestData, AccountPayoutResponseData>(request, "AccountPayout", uuid);
-        }
-
+        => this.SendRequest<AccountPayoutRequestDataAttributes, AccountPayoutRequestData, AccountPayoutResponseData>(request, "AccountPayout", uuid);
         public ApproveWithdrawalResponseData ApproveWithdrawal(ApproveWithdrawalRequestData request, string uuid = null)
-        {
-            return this.SendRequest<ApproveWithdrawalRequestData, ApproveWithdrawalResponseData>(request, "ApproveWithdrawal", uuid);
-        }
-
-        public BalanceResponseData Balance(BalanceRequestData request, string uuid = null)
-        {
-            return this.SendRequest<BalanceRequestData, BalanceResponseData>(request, "Balance", uuid);
-        }
-
+        => this.SendRequest<AnyAttributes, ApproveWithdrawalRequestData, ApproveWithdrawalResponseData>(request, "ApproveWithdrawal", uuid);
+        public IList<BalanceResponseDataEntry> Balance(BalanceRequestData request, string uuid = null)
+        => this.SendRequest<AnyAttributes, BalanceRequestData, IList<BalanceResponseDataEntry>>(request, "Balance", uuid);
         public CancelChargeResponseData CancelCharge(CancelChargeRequestData request, string uuid = null)
-        {
-            return this.SendRequest<CancelChargeRequestData, CancelChargeResponseData>(request, "CancelCharge", uuid);
-        }
+        => this.SendRequest<AnyAttributes, CancelChargeRequestData, CancelChargeResponseData>(request, "CancelCharge", uuid);
+        public DenyWithdrawalResponseData DenyWithdrawal(DenyWithdrawalRequestData request, string uuid = null)
+        => this.SendRequest<AnyAttributes, DenyWithdrawalRequestData, DenyWithdrawalResponseData>(request, "DenyWithdrawal", uuid);
+        public DepositResponseData Deposit(DepositRequestData request, string uuid = null)
+        => this.SendRequest<DepositRequestDataAttributes, DepositRequestData, DepositResponseData>(request, "Deposit", uuid);
+        public GetWithdrawalsResponseDataEntry[] GetWithdrawals(GetWithdrawalsRequestData request, string uuid = null)
+        => this.SendRequest<AnyAttributes, GetWithdrawalsRequestData, GetWithdrawalsResponseDataEntry[]>(request, "GetWithdrawals", uuid);
+        public RefundResponseData Refund(RefundRequestData request, string uuid = null)
+        => this.SendRequest<RefundRequestDataAttributes, RefundRequestData, RefundResponseData>(request, "Refund", uuid);
+        public CreateAccountResponseData CreateAccount(CreateAccountRequestData request, string uuid = null)
+        => this.SendRequest<CreateAccountRequestDataAttributes, CreateAccountRequestData, CreateAccountResponseData>(request, "CreateAccount", uuid);
+        public SelectAccountResponseData SelectAccount(SelectAccountRequestData request, string uuid = null)
+        => this.SendRequest<SelectAccountRequestDataAttributes, SelectAccountRequestData, SelectAccountResponseData>(request, "SelectAccount", uuid);
+        public RegisterAccountResponseData RegisterAccount(RegisterAccountRequestData request, string uuid = null)
+        => this.SendRequest<RegisterAccountRequestDataAttributes, RegisterAccountRequestData, RegisterAccountResponseData>(request, "RegisterAccount", uuid);
+        public RegisterAccountPayoutResponseData RegisterAccountPayout(RegisterAccountPayoutRequestData request, string uuid = null)
+        => this.SendRequest<RegisterAccountPayoutRequestDataAttributes, RegisterAccountPayoutRequestData, RegisterAccountPayoutResponseData>(request, "RegisterAccountPayout", uuid);
+        public WithdrawResponseData Withdraw(WithdrawRequestData request)
+        => this.SendRequest<WithdrawRequestDataAttributes, WithdrawRequestData, WithdrawResponseData>(request, "Withdraw");
+        public MerchantSettlementResponseData MerchantSettlement(MerchantSettlementRequestData request)
+        => this.SendRequest<AnyAttributes, MerchantSettlementRequestData, MerchantSettlementResponseData>(request, "MerchantSettlement");
+        public SwishResponseData Swish(SwishRequestData request)
+        => this.SendRequest<SwishRequestDataAttributes, SwishRequestData, SwishResponseData>(request, "Swish");
+        public DirectDebitMandateResponseData DirectDebitMandate(DirectDebitMandateRequestData request)
+        => this.SendRequest<DirectDebitMandateRequestDataAttributes, DirectDebitMandateRequestData, DirectDebitMandateResponseData>(request, "DirectDebitMandate");
+        public CancelDirectDebitMandateResponseData CancelDirectDebitMandate(CancelDirectDebitRequestData request)
+        => this.SendRequest<AnyAttributes, CancelDirectDebitRequestData, CancelDirectDebitMandateResponseData>(request, "CancelDirectDebitMandate");
+        public ImportDirectDebitMandateResponseData ImportDirectDebitMandate(ImportDirectDebitMandateRequestData request)
+        => this.SendRequest<ImportDirectDebitMandateRequestDataAttributes, ImportDirectDebitMandateRequestData, ImportDirectDebitMandateResponseData>(request, "ImportDirectDebitMandate");
+        public DirectDebitResponseData DirectDebit(DirectDebitRequestData request)
+        => this.SendRequest<DirectDebitRequestDataAttributes, DirectDebitRequestData, DirectDebitResponseData>(request, "DirectDebit");
+        public CancelDirectDebitResponseData CancelDirectDebit(CancelDirectDebitRequestData request)
+        => this.SendRequest<AnyAttributes, CancelDirectDebitRequestData, CancelDirectDebitResponseData>(request, "CancelDirectDebit");
+        public DirectCreditResponseData DirectCredit(DirectCreditRequestData request)
+        => this.SendRequest<DirectDebitRequestDataAttributes, DirectCreditRequestData, DirectCreditResponseData>(request, "DirectCredit");
+        public RefundDirectDebitResponseData RefundDirectDebit(RefundDirectDebitRequestData request)
+        => this.SendRequest<AnyAttributes, RefundDirectDebitRequestData, RefundDirectDebitResponseData>(request, "RefundDirectDebit");
+        public DirectPaymentBatchResponseData DirectPaymentBatch(DirectPaymentBatchRequestData request)
+        => this.SendRequest<DirectPaymentBatchRequestDataAttributes, DirectPaymentBatchRequestData, DirectPaymentBatchResponseData>(request, "DirectPaymentBatch");
 
         public ChargeResponseData Charge(ChargeRequestData request, string uuid = null)
         {
-            return this.SendRequest<ChargeRequestData, ChargeResponseData>(request, "Charge", uuid);
-        }
-
-        public DenyWithdrawalResponseData DenyWithdrawal(DenyWithdrawalRequestData request, string uuid = null)
-        {
-            return this.SendRequest<DenyWithdrawalRequestData, DenyWithdrawalResponseData>(request, "DenyWithdrawal", uuid);
-        }
-
-        public DepositResponseData Deposit(DepositRequestData request, string uuid = null)
-        {
-            return this.SendRequest<DepositRequestData, DepositResponseData>(request, "Deposit", uuid);
-        }
-
-        public GetWithdrawalsResponseData GetWithdrawals(GetWithdrawalsRequestData request, string uuid = null)
-        {
-            return this.SendRequest<GetWithdrawalsRequestData, GetWithdrawalsResponseData>(request, "GetWithdrawals", uuid);
-        }
-
-        public RefundResponseData Refund(RefundRequestData request, string uuid = null)
-        {
-            return this.SendRequest<RefundRequestData, RefundResponseData>(request, "Refund", uuid);
-        }
-
-        public CreateAccountResponseData CreateAccount(CreateAccountRequestData request, string uuid = null)
-        {
-            return this.SendRequest<CreateAccountRequestData, CreateAccountResponseData>(request, "CreateAccount", uuid);
-        }
-
-        public SelectAccountResponseData SelectAccount(SelectAccountRequestData request, string uuid = null)
-        {
-            return this.SendRequest<SelectAccountRequestData, SelectAccountResponseData>(request, "SelectAccount", uuid);
-        }
-
-        public RegisterAccountResponseData RegisterAccount(RegisterAccountRequestData request, string uuid = null)
-        {
-            return this.SendRequest<RegisterAccountRequestData, RegisterAccountResponseData>(request, "RegisterAccount", uuid);
-        }
-
-        public RegisterAccountPayoutResponseData RegisterAccountPayout(RegisterAccountPayoutRequestData request, string uuid = null)
-        {
-            return this.SendRequest<RegisterAccountPayoutRequestData, RegisterAccountPayoutResponseData>(request, "RegisterAccountPayout", uuid);
-        }
-
-        public SettlementReportResponseData SettlementReport(SettlementReportRequestData request, string uuid = null)
-        {
-            var response = this.SendRequest<SettlementReportRequestData, SettlementReportResponseData>(request, "ViewAutomaticSettlementDetailsCSV", uuid);
-
-            var parser = new SettlementReportParser();
-            var entries = parser.Parse(response.CsvContent);
-            response.Entries = entries;
+            var response = this.SendRequest<ChargeRequestDataAttributes, ChargeRequestData, ChargeResponseData>(request, "Charge", uuid);
+            if (response.Result == StringBoolean.FALSE)
+            {
+                var message = response.Rejected ?? "The request was rejected for an unknown reason";
+                throw new TrustlyRejectionException("Received a rejection response from the Trustly API: " + message)
+                {
+                    Reason = response.Rejected
+                };
+            }
 
             return response;
         }
 
-        public WithdrawResponseData Withdraw(WithdrawRequestData request)
+        public List<SettlementReportResponseDataEntry> SettlementReport(SettlementReportRequestData request, string uuid = null)
         {
-            return this.SendRequest<WithdrawRequestData, WithdrawResponseData>(request, "Withdraw");
+            var response = this.SendRequest<SettlementReportRequestDataAttributes, SettlementReportRequestData, SettlementReportResponseData>(request, "ViewAutomaticSettlementDetailsCSV", uuid);
+            var entries = new SettlementReportParser().Parse(response.ViewAutomaticSettlementDetails);
+
+            return entries;
         }
 
         /// <summary>
@@ -166,13 +130,14 @@ namespace Trustly.Api.Client
         /// <param name="requestData">The request data that will be used for the request</param>
         /// <param name="method">The method of the JsonRpc package</param>
         /// <returns>A signed and validated JsonRpc request package</returns>
-        public JsonRpcRequest<TReqData> CreateRequestPackage<TReqData>(TReqData requestData, string method, string uuid = null)
-            where TReqData : IRequestParamsData
+        public JsonRpcRequest<TReqAttr, TReqData, JsonRpcRequestParams<TReqAttr, TReqData>> CreateRequestPackage<TReqAttr, TReqData>(TReqData requestData, string method, string uuid = null)
+            where TReqAttr : AbstractRequestDataAttributes
+            where TReqData : AbstractRequestData<TReqAttr>
         {
-            var rpcRequest = this._objectFactory.Create(requestData, method, uuid);
+            var rpcRequest = this._objectFactory.Create<TReqAttr, TReqData>(requestData, method, uuid);
 
-            this._signer.Sign(rpcRequest);
-            this._validator.Validate(rpcRequest);
+            rpcRequest.Params.Signature = this.Signer.CreateSignature(rpcRequest.Method, rpcRequest.Params.UUID, requestData);
+            this.Validator.Validate(rpcRequest);
 
             return rpcRequest;
         }
@@ -182,22 +147,12 @@ namespace Trustly.Api.Client
         /// </summary>
         /// <typeparam name="TResData"></typeparam>
         /// <returns>A signed and validated JsonRpc response package</returns>
-        public JsonRpcResponse<TResData> CreateResponsePackage<TResData>(string method, string requestUuid, TResData responseData)
-            where TResData : IResponseResultData
+        public JsonRpcResponse<TResData, ResponseResult<TResData>> CreateResponsePackage<TResData>(TResData responseData, string method, string requestUuid)
         {
-            var rpcResponse = new JsonRpcResponse<TResData>
-            {
-                Result = new ResponseResult<TResData>
-                {
-                    Method = method,
-                    UUID = requestUuid,
-                    Data = responseData
-                },
-                Version = "1.1"
-            };
+            var rpcResponse = this._objectFactory.CreateResponse(responseData, method, requestUuid);
 
-            this._signer.Sign(rpcResponse);
-            this._validator.Validate(rpcResponse);
+            rpcResponse.Result.Signature = this.Signer.CreateSignature(rpcResponse.Result.Method, rpcResponse.Result.UUID, rpcResponse.Result.Data);
+            this.Validator.Validate(rpcResponse);
 
             return rpcResponse;
         }
@@ -208,102 +163,103 @@ namespace Trustly.Api.Client
         /// <param name="requestData">Request to send to Trustly API</param>
         /// <param name="method">The RPC method name of the request</param>
         /// <param name="uuid">Optional UUID for the request. If not specified, a Guid will be generated</param>
-        /// <returns>Response generated from the request</returns>
-        public TRespData SendRequest<TReqData, TRespData>(TReqData requestData, string method, string uuid = null)
-            where TReqData : IToTrustlyRequestParamsData
-            where TRespData : IResponseResultData
+        /// <returns>Response data returned from the request</returns>
+        public TResData SendRequest<TReqAttr, TReqData, TResData>(TReqData requestData, string method, string uuid = null)
+            where TReqAttr : AbstractRequestDataAttributes
+            where TReqData : AbstractRequestData<TReqAttr>
         {
             requestData.Username = this.Settings.Username;
             requestData.Password = this.Settings.Password;
 
-            var rpcRequest = this.CreateRequestPackage(requestData, method, uuid);
-
-            var requestString = JsonConvert.SerializeObject(rpcRequest, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            });
-
-            var responseString = NewHttpPost(requestString);
-            var rpcResponse = JsonConvert.DeserializeObject<JsonRpcResponse<TRespData>>(responseString);
-
-            if (!rpcResponse.IsSuccessfulResult())
-            {
-                var message = rpcResponse.Error?.Message ?? rpcResponse.Error?.Name ?? ("" + rpcResponse.Error?.Code);
-                throw new TrustlyDataException("Received an error response from the Trustly API: " + message)
-                {
-                    ResponseError = rpcResponse.Error
-                };
-            }
-
-            if (rpcResponse.Result.Data is IWithRejectionResult rejectionResult)
-            {
-                if (!rejectionResult.Result)
-                {
-                    var message = rejectionResult.Rejected ?? "The request was rejected for an unknown reason";
-                    throw new TrustlyRejectionException("Received a rejection response from the Trustly API: " + message)
-                    {
-                        Reason = rejectionResult.Rejected
-                    };
-                }
-            }
-
-            if (!this._signer.Verify(rpcResponse))
-            {
-                throw new TrustlySignatureException("Incoming data signature is not valid");
-            }
-
-            if (string.IsNullOrEmpty(rpcResponse.GetUUID()) || !rpcResponse.GetUUID().Equals(rpcRequest.Params.UUID))
-            {
-                throw new TrustlyDataException("Incoming UUID is not valid");
-            }
-
-            return rpcResponse.Result.Data;
+            var rpcRequest = this.CreateRequestPackage<TReqAttr, TReqData>(requestData, method, uuid);
+            return this.SendRequest<TReqAttr, TReqData, TResData>(rpcRequest);
         }
 
-        public async Task<int> HandleNotificationFromRequestAsync(HttpRequest request, NotificationResponseDelegate onOK = null, NotificationFailResponseDelegate onFailed = null)
+        /// <summary>
+        /// Sends given request to Trustly.
+        /// </summary>
+        /// <param name="rpcRequest">The full JsonRpc request to send to the Trustly API</param>
+        /// <returns>Response data returned from the request</returns>
+        public TResData SendRequest<TReqAttr, TReqData, TResData>(JsonRpcRequest<TReqAttr, TReqData, JsonRpcRequestParams<TReqAttr, TReqData>> rpcRequest)
+            where TReqAttr : AbstractRequestDataAttributes
+            where TReqData : AbstractRequestData<TReqAttr>
         {
-            if (string.Equals(request.Method, "post", StringComparison.InvariantCultureIgnoreCase))
+            var requestString = JsonConvert.SerializeObject(rpcRequest, this.SerializerSettings);
+
+            var responseString = NewHttpPost(requestString);
+            var responseNode = JObject.Parse(responseString);
+
+            if (responseNode.ContainsKey("error") || !responseNode.ContainsKey("result"))
             {
-                using (var sr = new StreamReader(request.Body))
+                var rpcErrorResponse = responseNode.ToObject<JsonRpcErrorResponse>();
+
+                var message = rpcErrorResponse.Error?.Message ?? rpcErrorResponse.Error?.Name ?? ("" + rpcErrorResponse.Error?.Code);
+                throw new TrustlyDataException("Received an error response from the Trustly API: " + message)
                 {
-                    var requestStringBody = await sr.ReadToEndAsync();
-                    return this.HandleNotificationFromString(requestStringBody, onOK, onFailed);
-                }
+                    ResponseError = rpcErrorResponse.Error
+                };
             }
             else
             {
-                throw new TrustlyNotificationException("Notifications are only allowed to be received as a HTTP Post");
+                var rpcResponse = responseNode.ToObject<JsonRpcResponse<TResData, ResponseResult<TResData>>>();
+
+                if (!this.Signer.Verify(rpcResponse.Result.Method, rpcResponse.Result.UUID, responseNode["result"]["data"], rpcResponse.Result.Signature))
+                {
+                    throw new TrustlySignatureException("Incoming data signature is not valid");
+                }
+
+                if (string.IsNullOrEmpty(rpcResponse.Result.UUID) || !rpcResponse.Result.UUID.Equals(rpcRequest.Params.UUID))
+                {
+                    throw new TrustlyDataException("Incoming UUID is not valid");
+                }
+
+                return rpcResponse.Result.Data;
             }
         }
 
-        public int HandleNotificationFromString(string jsonString, NotificationResponseDelegate onOK = null, NotificationFailResponseDelegate onFailed = null)
+        public async Task<int> HandleNotificationFromRequestAsync(HttpRequest request, NotificationRespondDelegate callback)
         {
-            var jsonToken = JToken.Parse(jsonString);
+            if (!string.Equals(request.Method, "post", StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new TrustlyNotificationException("Notifications are only allowed to be received as a HTTP Post");
+            }
 
-            var methodToken = jsonToken.SelectToken("$.method");
-            var methodValue = methodToken.Value<string>().ToLower(CultureInfo.InvariantCulture);
+            using (var sr = new StreamReader(request.Body))
+            {
+                var jsonString = await sr.ReadToEndAsync();
 
-            var mapper = this._methodToNotificationMapper.ContainsKey(methodValue)
-                ? this._methodToNotificationMapper[methodValue]
-                : this._methodToNotificationMapper[string.Empty];
+                var jsonToken = JToken.Parse(jsonString);
+                var methodValue = jsonToken.Value<string>("method").ToLower(CultureInfo.InvariantCulture);
 
-            // This will then call generic method HandleNotificationFromString below.
-            // We do it this way to keep the dynamic generic parameters intact.
-            return mapper(jsonString, onOK, onFailed);
+                switch (methodValue)
+                {
+                    case "account": return HandleNotification(jsonToken, this.OnAccount, callback);
+                    case "cancel": return HandleNotification(jsonToken, this.OnCancel, callback);
+                    case "credit": return HandleNotification(jsonToken, this.OnCredit, callback);
+                    case "debit": return HandleNotification(jsonToken, this.OnDebit, callback);
+                    case "payoutconfirmation": return HandleNotification(jsonToken, this.OnPayoutConfirmation, callback);
+                    case "pending": return HandleNotification(jsonToken, this.OnPending, callback);
+                    case "kyc": return HandleNotification(jsonToken, this.OnKYC, callback);
+                    default: return HandleNotification(jsonToken, this.OnUnknownNotification, callback);
+                };
+            }
         }
 
-        private int HandleNotificationFromString<TReqData>(
-                string jsonString,
-                EventHandler<NotificationArgs<TReqData>> eventHandler,
-                NotificationResponseDelegate onOK,
-                NotificationFailResponseDelegate onFailed
-            )
-            where TReqData : IRequestParamsData
+        private int HandleNotification<TNotificationData, TAckData>(
+            JToken token,
+            EventHandler<NotificationArgs<TNotificationData, TAckData>> eventHandler,
+            NotificationRespondDelegate callback
+        )
         {
-            var rpcRequest = JsonConvert.DeserializeObject<JsonRpcRequest<TReqData>>(jsonString);
+            if (eventHandler == null)
+            {
+                return 0;
+            }
+
+            var notification = token.ToObject<JsonRpcNotification<TNotificationData, JsonRpcNotificationParams<TNotificationData>>>();
 
             // Verify the notification (RpcRequest from Trustly) signature.
-            if (!this._signer.Verify(rpcRequest))
+            if (!this.Signer.Verify(notification.Method, notification.Params.UUID, token["params"]["data"], notification.Params.Signature))
             {
                 throw new TrustlySignatureException("Could not validate signature of notification from Trustly. Is the public key for Trustly the correct one, for test or production?");
             }
@@ -311,22 +267,24 @@ namespace Trustly.Api.Client
             // Validate the incoming request instance.
             // Most likely this will do nothing, since we are lenient on things sent from Trustly server.
             // But we do this in case anything is needed to be validated on the local domain classes in the future.
-            this._validator.Validate(rpcRequest);
+            this.Validator.Validate(notification);
 
-            if (eventHandler == null || eventHandler.GetInvocationList().Length == 0)
+            var args = new NotificationArgs<TNotificationData, TAckData>(notification.Params.Data, notification.Method, notification.Params.UUID, async (ackData) =>
             {
-                throw new TrustlyNoNotificationListenerException($"Received an incoming '{rpcRequest.Method}' notification, but there was no event listener subscribing to it");
-            }
+                var responseObject = this._objectFactory.CreateResponse(notification, ackData);
 
-            try
-            {
-                eventHandler(this, new NotificationArgs<TReqData>(rpcRequest.Params.Data, rpcRequest.Method, rpcRequest.Params.UUID, onOK, onFailed));
-            }
-            catch (Exception ex)
-            {
-                var message = this.Settings.IncludeExceptionMessageInNotificationResponse ? ex.Message : null;
-                onFailed(rpcRequest.Method, rpcRequest.Params.UUID, message);
-            }
+                responseObject.Result.Signature = this.Signer.CreateSignature(
+                    responseObject.Result.Method,
+                    responseObject.Result.UUID,
+                    responseObject.Result.Data
+                );
+
+                var responseStr = JsonConvert.SerializeObject(responseObject, this.SerializerSettings);
+
+                await callback(responseStr);
+            });
+
+            eventHandler(this, args);
 
             return eventHandler.GetInvocationList().Length;
         }

@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Trustly.Api.Domain.Requests;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Trustly.Api.Domain;
 
 namespace Trustly.Api.Client
 {
@@ -19,16 +15,34 @@ namespace Trustly.Api.Client
         private readonly static Mapper NOOP_MAPPER = (row, value) => { };
         private readonly Dictionary<string, Mapper> _mappers = new Dictionary<string, Mapper>();
 
+        class EnumHelper<T>
+        {
+            public T Value { get; set; }
+        }
+
         public SettlementReportParser()
         {
             this._mappers.Add("accountname", (row, value) => row.AccountName = value);
             this._mappers.Add("currency", (row, value) => row.Currency = value);
-            this._mappers.Add("messageid", (row, value) => row.MessageID = value);
+            this._mappers.Add("messageid", (row, value) => row.MessageId = value);
             this._mappers.Add("orderid", (row, value) => row.OrderID = value);
-            this._mappers.Add("ordertype", (row, value) => row.OrderType = value);
+            this._mappers.Add("ordertype", (row, value) =>
+            {
+                row.OrderTypeString = value;
+                try
+                {
+                    var json = $"{{\"value\": \"{value}\"}}";
+                    var result = JsonConvert.DeserializeObject<EnumHelper<OrderType>>(json);
+                    row.OrderType = result.Value;
+                }
+                catch (Exception ex)
+                {
+                    row.OrderType = null;
+                }
+            });
             this._mappers.Add("username", (row, value) => row.Username = value);
             this._mappers.Add("fxpaymentcurrency", (row, value) => row.FxPaymentCurrency = value);
-            this._mappers.Add("settlementbankwithdrawalid", (row, value) => row.SettlementBankWithdrawalID = value);
+            this._mappers.Add("settlementbankwithdrawalid", (row, value) => row.SettlementBankWithdrawalId = value);
             this._mappers.Add("externalreference", (row, value) => row.ExternalReference = value);
             this._mappers.Add("extraref", (row, value) => row.ExternalReference = value);
 
@@ -64,12 +78,14 @@ namespace Trustly.Api.Client
 
             this._mappers.Add("datestamp", (row, value) =>
             {
+                /*
                 if (!DateTime.TryParse(value, out DateTime result))
                 {
                     throw new ArgumentException($"Could not convert value '{value}' into a DateTime");
                 }
+                */
 
-                row.Datestamp = result;
+                row.Datestamp = value;
             });
         }
 

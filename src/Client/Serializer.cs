@@ -3,25 +3,41 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Trustly.Api.Domain.Base;
 
 namespace Trustly.Api.Client
 {
     public class Serializer
     {
-        public string SerializeData<TData>(TData data)
-            where TData : IData
+        public string SerializeData<TData>(TData data, bool silent = false)
         {
-            var settings = new JsonSerializerSettings
+            JToken jsonObject;
+            if (data is JToken token)
             {
-                NullValueHandling = NullValueHandling.Include
-            };
+                // If the value to serialize is already a JToken, then we will assume it is an object.
+                // We can also work on the actual exact response, and not rely on flaky JSON -> DTO -> JSON -> String conversion.
+                jsonObject = (JToken) token;
+            }
+            else
+            {
+                var settings = new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                };
 
-            var jsonString = JsonConvert.SerializeObject(data, settings);
+                if (silent)
+                {
+                    // We ignore any error; useful for test cases or other uncertain scenarios.
+                    settings.Error = (sender, e) =>
+                    {
+                        e.ErrorContext.Handled = true;
+                    };
+                }
 
-            var jsonObject = JToken.Parse(jsonString);
+                var jsonSerializer = JsonSerializer.Create(settings);
+                jsonObject = JObject.FromObject(data, jsonSerializer);
+            }
+
             var sb = new StringBuilder();
-
             this.SerializeToken(jsonObject, sb, new string[0]);
 
             return sb.ToString();
@@ -41,22 +57,6 @@ namespace Trustly.Api.Client
             }
             else if (token is JValue value)
             {
-                if (propertyPath[0].ToLower().Equals("attributes"))
-                {
-                    if (value.Value == null)
-                    {
-                        // NOTE: Special consideration is made for 'attributes' properties.
-                        // Documentation says that <null> should be regarded as <empty string>
-                        // But it does not specify that a not included 'attribute' property
-                        // is that same as it not existing at all.
-                        // This is contrary to how 'data' properties work, since they are typesafe.
-                        // But 'attributes' properties were not typesafe, just a map, in older code.
-                        // This discrepancy shows its' head here, since this code is typesafe.
-                        return false;
-                    }
-                }
-
-                //sb.Append(propertyPath[propertyPath.Length - 1]);
                 sb.Append(value.Value<string>());
             }
             else if (token is JProperty property)
@@ -65,11 +65,18 @@ namespace Trustly.Api.Client
                 propertyPath.CopyTo(newPath, 0);
                 newPath[newPath.Length - 1] = property.Name;
 
-                var propertyBuffer = new StringBuilder();
-                if (this.SerializeToken(property.Value, propertyBuffer, newPath))
+                if (property.Value.Type == JTokenType.Null)
                 {
                     sb.Append(property.Name);
-                    sb.Append(propertyBuffer);
+                }
+                else
+                {
+                    var propertyBuffer = new StringBuilder();
+                    if (this.SerializeToken(property.Value, propertyBuffer, newPath))
+                    {
+                        sb.Append(property.Name);
+                        sb.Append(propertyBuffer);
+                    }
                 }
             }
             else

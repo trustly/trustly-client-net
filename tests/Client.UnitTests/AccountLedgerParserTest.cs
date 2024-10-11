@@ -1,8 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using Trustly.Api.Domain.Base;
-using Trustly.Api.Domain.Requests;
+using Trustly.Api.Domain;
 
 namespace Trustly.Api.Client.UnitTests
 {
@@ -45,14 +44,14 @@ namespace Trustly.Api.Client.UnitTests
                 }
             }";
 
-            var rpcResponse = JsonConvert.DeserializeObject<JsonRpcResponse<AccountLedgerResponseData>>(jsonResponse);
+            var rpcResponse = JsonConvert.DeserializeObject<AccountLedgerResponse>(jsonResponse);
 
-            Assert.AreEqual(2, rpcResponse.Result.Data.Entries.Count);
+            Assert.That(rpcResponse.Result.Data.Count, Is.EqualTo(2));
 
-            Assert.AreEqual("9e4345db-6093-bb35-07d3-e335f1e28793", rpcResponse.Result.UUID);
-            Assert.AreEqual("3839426635", rpcResponse.Result.Data.Entries[0].UserID);
-            Assert.AreEqual("5.00000000000000000000", rpcResponse.Result.Data.Entries[0].Amount);
-            Assert.AreEqual("-3.01", rpcResponse.Result.Data.Entries[1].Amount);
+            Assert.That(rpcResponse.Result.UUID, Is.EqualTo("9e4345db-6093-bb35-07d3-e335f1e28793"));
+            Assert.That(rpcResponse.Result.Data[0].UserID, Is.EqualTo("3839426635"));
+            Assert.That(rpcResponse.Result.Data[0].Amount, Is.EqualTo("5.00000000000000000000"));
+            Assert.That(rpcResponse.Result.Data[1].Amount, Is.EqualTo("-3.01"));
         }
     }
 }

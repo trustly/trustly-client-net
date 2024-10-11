@@ -25,15 +25,15 @@ namespace Trustly.Api.Client.UnitTests
 
             var rows = parser.Parse(csv);
 
-            Assert.AreEqual(10, rows.Count);
-            Assert.AreEqual("SUSPENSE_ACCOUNT_CLIENT_FUNDS_FINLAND_OKOY", rows[0].AccountName);
-            Assert.AreEqual("TRANSACTION_FEE_BANK_WITHDRAWAL", rows[9].AccountName);
+            Assert.That(rows.Count, Is.EqualTo(10));
+            Assert.That(rows[0].AccountName, Is.EqualTo("SUSPENSE_ACCOUNT_CLIENT_FUNDS_FINLAND_OKOY"));
+            Assert.That(rows[9].AccountName, Is.EqualTo("TRANSACTION_FEE_BANK_WITHDRAWAL"));
 
-            Assert.AreEqual("1434179572", rows[0].SettlementBankWithdrawalID);
-            Assert.AreEqual("1434179572", rows[9].SettlementBankWithdrawalID);
+            Assert.That(rows[0].SettlementBankWithdrawalId, Is.EqualTo("1434179572"));
+            Assert.That(rows[9].SettlementBankWithdrawalId, Is.EqualTo("1434179572"));
 
-            Assert.AreEqual(null, rows[0].ExternalReference);
-            Assert.AreEqual("someref", rows[9].ExternalReference);
+            Assert.That(rows[0].ExternalReference, Is.Null);
+            Assert.That(rows[9].ExternalReference, Is.EqualTo("someref"));
         }
     }
 }

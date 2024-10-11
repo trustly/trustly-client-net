@@ -1,11 +1,9 @@
 using System;
 using NUnit.Framework;
-using Trustly.Api.Client;
 using Trustly.Api.Domain.Exceptions;
-using System.Threading.Tasks;
-using Trustly.Api.Domain.Base;
 using Newtonsoft.Json;
 using System.Net;
+using Trustly.Api.Domain;
 
 namespace Trustly.Api.Client.Tests
 {
@@ -22,29 +20,29 @@ namespace Trustly.Api.Client.Tests
         [Test]
         public void TestAccountLedger()
         {
-            var response = client.AccountLedger(new Trustly.Api.Domain.Requests.AccountLedgerRequestData
+            var response = client.AccountLedger(new AccountLedgerRequestData
             {
                 Currency = "SEK",
                 FromDate = "2010-01-01 00:00:00",
                 ToDate = "2021-01-01 00:00.00"
             });
 
-            Assert.NotNull(response);
-            Assert.NotNull(response.Entries);
+            Assert.That(response, Is.Not.Null);
         }
 
-        private class FooAttributes : AbstractRequestParamsDataAttributes
+        private class FooAttributes : AbstractRequestDataAttributes
         {
             public string NationalIdentificationNumber { get; set; }
         }
 
-        private class FooRequestData : AbstractToTrustlyRequestParamsData<FooAttributes>
+        private class FooRequestData : AbstractRequestData<FooAttributes>
         {
             public string EndUserID { get; set; }
             public string ClearingHouse { get; set; }
+            //public FooAttributes Attributes { get; set; }
         }
 
-        private class FooResponse : AbstractResponseResultData
+        private class FooResponseData //: AbstractResponseResult
         {
             [JsonProperty("descriptor")]
             public string Descriptor { get; set; }
@@ -55,7 +53,7 @@ namespace Trustly.Api.Client.Tests
         {
             var ex = Assert.Throws<TrustlyDataException>(() =>
             {
-                var response = client.SendRequest<FooRequestData, FooResponse>(new FooRequestData
+                var response = client.SendRequest<FooAttributes, FooRequestData, FooResponseData>(new FooRequestData
                 {
                     EndUserID = "123",
                     ClearingHouse = "CLRNGHS",
@@ -66,7 +64,7 @@ namespace Trustly.Api.Client.Tests
                 }, "Foo", Guid.NewGuid().ToString());
             });
 
-            Assert.AreEqual("ERROR_INVALID_FUNCTION", ex.ResponseError.Message);
+            Assert.That(ex.ResponseError.Message, Is.EqualTo("ERROR_INVALID_FUNCTION"));
         }
 
         [Test]
@@ -74,7 +72,7 @@ namespace Trustly.Api.Client.Tests
         {
             var ex = Assert.Throws<TrustlyDataException>(() =>
             {
-                var response = client.AccountPayout(new Trustly.Api.Domain.Requests.AccountPayoutRequestData
+                var response = client.AccountPayout(new AccountPayoutRequestData
                 {
                     NotificationURL = "https://fake.test.notification.trustly.com",
                     MessageID = Guid.NewGuid().ToString(),
@@ -83,15 +81,15 @@ namespace Trustly.Api.Client.Tests
                     Currency = "SEK",
                     Amount = "100.1",
 
-                    Attributes = new Trustly.Api.Domain.Requests.AccountPayoutRequestDataAttributes
+                    Attributes = new AccountPayoutRequestDataAttributes
                     {
                         ShopperStatement = "A Shopper Statement"
                     }
                 });
             });
 
-            Assert.AreEqual("ERROR_INVALID_BANK_ACCOUNT_NUMBER", ex.ResponseError.Message);
-            Assert.AreEqual("ERROR_INVALID_BANK_ACCOUNT_NUMBER", ex.ResponseError.Error.Data.Message);
+            Assert.That(ex.ResponseError.Message, Is.EqualTo("ERROR_INVALID_BANK_ACCOUNT_NUMBER"));
+            Assert.That(ex.ResponseError.Error.Data.AdditionalProperties["message"].ToString(), Is.EqualTo("ERROR_INVALID_BANK_ACCOUNT_NUMBER"));
         }
 
         [Test]
@@ -99,24 +97,23 @@ namespace Trustly.Api.Client.Tests
         {
             var ex = Assert.Throws<TrustlyDataException>(() =>
             {
-                var response = client.ApproveWithdrawal(new Trustly.Api.Domain.Requests.ApproveWithdrawalRequestData
+                var response = client.ApproveWithdrawal(new ApproveWithdrawalRequestData
                 {
                     OrderID = 123_123
                 });
             });
 
-            Assert.AreEqual("ERROR_NOT_FOUND", ex.ResponseError.Message);
+            Assert.That(ex.ResponseError.Message, Is.EqualTo("ERROR_NOT_FOUND"));
         }
 
         [Test]
         public void TestBalance()
         {
-            var response = client.Balance(new Trustly.Api.Domain.Requests.BalanceRequestData
+            var response = client.Balance(new BalanceRequestData
             {
             });
 
-            Assert.NotNull(response);
-            Assert.NotNull(response.Entries); // If not null, then something has been set, even if empty.
+            Assert.That(response, Is.Not.Null);
 
             // TODO: If empty, can we somehow do a deposit from the API, to simulate one?
         }
@@ -126,13 +123,13 @@ namespace Trustly.Api.Client.Tests
         {
             var ex = Assert.Throws<TrustlyDataException>(() =>
             {
-                var response = client.CancelCharge(new Trustly.Api.Domain.Requests.CancelChargeRequestData
+                var response = client.CancelCharge(new CancelChargeRequestData
                 {
-                    OrderId = "123123"
+                    OrderID = "123123"
                 });
             });
 
-            Assert.AreEqual("ERROR_INVALID_ORDER_ID", ex.ResponseError.Message);
+            Assert.That(ex.ResponseError.Message, Is.EqualTo("ERROR_INVALID_ORDER_ID"));
         }
 
         [Test]
@@ -140,7 +137,7 @@ namespace Trustly.Api.Client.Tests
         {
             var ex = Assert.Throws<TrustlyRejectionException>(() =>
             {
-                var response = client.Charge(new Trustly.Api.Domain.Requests.ChargeRequestData
+                var response = client.Charge(new ChargeRequestData
                 {
                     NotificationURL = "https://fake.test.notification.trustly.com",
 
@@ -150,7 +147,7 @@ namespace Trustly.Api.Client.Tests
                     Amount = "100.00",
                     EndUserID = "pontus.eliason@trustly.com",
 
-                    Attributes = new Trustly.Api.Domain.Requests.ChargeRequestDataAttributes
+                    Attributes = new ChargeRequestDataAttributes
                     {
                         Email = "pontus.eliason@trustly.com",
                         ShopperStatement = "A Shopper Statement"
@@ -158,7 +155,7 @@ namespace Trustly.Api.Client.Tests
                 });
             });
 
-            Assert.AreEqual("ERROR_ACCOUNT_NOT_FOUND", ex.Reason);
+            Assert.That(ex.Reason, Is.EqualTo("ERROR_ACCOUNT_NOT_FOUND"));
         }
 
         [Test]
@@ -166,19 +163,19 @@ namespace Trustly.Api.Client.Tests
         {
             var ex = Assert.Throws<TrustlyDataException>(() =>
             {
-                var response = client.DenyWithdrawal(new Trustly.Api.Domain.Requests.DenyWithdrawalRequestData
+                var response = client.DenyWithdrawal(new DenyWithdrawalRequestData
                 {
                     OrderID = 123_123
                 });
             });
 
-            Assert.AreEqual("ERROR_NOT_FOUND", ex.ResponseError.Message);
+            Assert.That(ex.ResponseError.Message, Is.EqualTo("ERROR_NOT_FOUND"));
         }
 
         [Test]
         public void TestRegisterAccount()
         {
-            var response = client.RegisterAccount(new Trustly.Api.Domain.Requests.RegisterAccountRequestData
+            var response = client.RegisterAccount(new RegisterAccountRequestData
             {
                 EndUserID = "123123",
                 ClearingHouse = "SWEDEN",
@@ -186,7 +183,7 @@ namespace Trustly.Api.Client.Tests
                 AccountNumber = "69706212",
                 Firstname = "Steve",
                 Lastname = "Smith",
-                Attributes = new Trustly.Api.Domain.Requests.RegisterAccountRequestDataAttributes
+                Attributes = new RegisterAccountRequestDataAttributes
                 {
                     DateOfBirth = "1979-01-31",
                     MobilePhone = "+46709876543",
@@ -201,16 +198,16 @@ namespace Trustly.Api.Client.Tests
                 }
             });
 
-            Assert.NotNull(response);
-            Assert.AreEqual(response.Descriptor, "**706212");
-            Assert.AreEqual(response.ClearingHouse, "SWEDEN");
-            Assert.AreEqual(response.Bank, "Handelsbanken");
+            Assert.That(response, Is.Not.Null);
+            Assert.That("**706212", Is.EqualTo(response.Descriptor));
+            Assert.That("SWEDEN", Is.EqualTo(response.ClearingHouse));
+            Assert.That("Handelsbanken", Is.EqualTo(response.Bank));
         }
 
         [Test]
         public void TestRegisterAccountPayout()
         {
-            var response = client.RegisterAccountPayout(new Trustly.Api.Domain.Requests.RegisterAccountPayoutRequestData
+            var response = client.RegisterAccountPayout(new RegisterAccountPayoutRequestData
             {
                 EndUserID = "123123",
                 ClearingHouse = "SWEDEN",
@@ -223,7 +220,7 @@ namespace Trustly.Api.Client.Tests
                 Currency = "SEK",
                 Amount = "100.1",
 
-                Attributes = new Trustly.Api.Domain.Requests.RegisterAccountPayoutRequestDataAttributes
+                Attributes = new RegisterAccountPayoutRequestDataAttributes
                 {
                     DateOfBirth = "1979-01-31",
                     MobilePhone = "+46709876543",
@@ -239,20 +236,19 @@ namespace Trustly.Api.Client.Tests
                 }
             });
 
-            Assert.NotNull(response);
-            Assert.NotNull(response.OrderID);
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.OrderID, Is.Not.Null);
         }
-
 
         [Test]
         public void TestDeposit()
         {
-            var response = client.Deposit(new Trustly.Api.Domain.Requests.DepositRequestData
+            var response = client.Deposit(new DepositRequestData
             {
                 NotificationURL = "https://fake.test.notification.trustly.com",
                 MessageID = Guid.NewGuid().ToString(),
                 EndUserID = "pontus.eliason@trustly.com",
-                Attributes = new Trustly.Api.Domain.Requests.DepositRequestDataAttributes
+                Attributes = new DepositRequestDataAttributes
                 {
                     Amount = "100.00",
                     Firstname = "John",
@@ -261,12 +257,14 @@ namespace Trustly.Api.Client.Tests
                     Currency = "EUR",
                     Country = "SE",
                     Locale = "sv_SE",
-                    ShopperStatement = "Trustly Test Deposit"
+                    ShopperStatement = "Trustly Test Deposit",
+                    SuccessURL = "https://google.com?q=success",
+                    FailURL = "https://google.com?q=fail",
                 }
             });
 
-            Assert.NotNull(response);
-            Assert.IsFalse(string.IsNullOrEmpty(response.URL));
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.URL, Is.Not.Empty);
         }
 
         [Test]
@@ -285,12 +283,12 @@ namespace Trustly.Api.Client.Tests
                 }
             };
 
-            var response = proxyClient.Deposit(new Trustly.Api.Domain.Requests.DepositRequestData
+            var response = proxyClient.Deposit(new DepositRequestData
             {
                 NotificationURL = "https://fake.test.notification.trustly.com",
                 MessageID = Guid.NewGuid().ToString(),
                 EndUserID = "pontus.eliason@trustly.com",
-                Attributes = new Trustly.Api.Domain.Requests.DepositRequestDataAttributes
+                Attributes = new DepositRequestDataAttributes
                 {
                     Amount = "100.00",
                     Firstname = "John",
@@ -299,26 +297,27 @@ namespace Trustly.Api.Client.Tests
                     Currency = "EUR",
                     Country = "SE",
                     Locale = "sv_SE",
-                    ShopperStatement = "Trustly Test Deposit"
+                    ShopperStatement = "Trustly Test Deposit",
+                    SuccessURL = "https://google.com?q=success",
+                    FailURL = "https://google.com?q=fail",
                 }
             });
 
-            Assert.NotNull(response);
-            Assert.IsFalse(string.IsNullOrEmpty(response.URL));
-            Assert.AreEqual(1, callCount);
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.URL, Is.Not.Empty);
+            Assert.That(callCount, Is.EqualTo(1));
         }
 
         [Test]
         public void TestGetWithdrawals()
         {
             // GetWithdrawals seems to work even if the OrderID does not exist.
-            var response = client.GetWithdrawals(new Trustly.Api.Domain.Requests.GetWithdrawalsRequestData
+            var response = client.GetWithdrawals(new GetWithdrawalsRequestData
             {
-                OrderID = "123123"
+                OrderID = 123123
             });
 
-            Assert.NotNull(response);
-            Assert.NotNull(response.Entries); // If not null, at least something was set
+            Assert.That(response, Is.Not.Null);
         }
 
         [Test]
@@ -326,46 +325,45 @@ namespace Trustly.Api.Client.Tests
         {
             var ex = Assert.Throws<TrustlyDataException>(() =>
             {
-                var response = client.Refund(new Trustly.Api.Domain.Requests.RefundRequestData
+                var response = client.Refund(new RefundRequestData
                 {
                     OrderID = "123123",
                     Currency = "SEK",
                     Amount = "100.00",
-                    Attributes = new Trustly.Api.Domain.Requests.RefundRequestDataAttributes
+                    Attributes = new RefundRequestDataAttributes
                     {
                         ExternalReference = "Reference" + new Random().Next()
                     }
                 });
             });
 
-            Assert.NotNull("ERROR_INVALID_ORDER_ID", ex.ResponseError.Message);
+            Assert.That(ex.ResponseError.Message, Is.EqualTo("ERROR_INVALID_ORDER_ID"));
         }
 
         [Ignore("It gives ERROR_UNKNOWN if empty response is returned. Not trustworthy.")]
         [Test]
         public void TestSettlementReport()
         {
-            var response = client.SettlementReport(new Trustly.Api.Domain.Requests.SettlementReportRequestData
+            var response = client.SettlementReport(new SettlementReportRequestData
             {
                 Currency = "SEK",
                 SettlementDate = "2020-01-01 00:00:00"
             });
 
-            Assert.NotNull(response);
-            Assert.NotNull(response.Entries); // If not null, something was set.
+            Assert.That(response, Is.Not.Null);
         }
 
         [Test]
         public void TestWithdraw()
         {
-            var response = client.Withdraw(new Trustly.Api.Domain.Requests.WithdrawRequestData
+            var response = client.Withdraw(new WithdrawRequestData
             {
                 NotificationURL = "https://fake.test.notification.trustly.com",
                 MessageID = Guid.NewGuid().ToString(),
                 EndUserID = "pontus.eliason@trustly.com",
                 Currency = "SEK",
 
-                Attributes = new Trustly.Api.Domain.Requests.WithdrawRequestDataAttributes
+                Attributes = new WithdrawRequestDataAttributes
                 {
                     SuggestedAmount = "100.00",
                     SuggestedMinAmount = "10.00",
@@ -375,12 +373,14 @@ namespace Trustly.Api.Client.Tests
                     Email = "pontus.eliason@trustly.com",
                     Country = "SE",
                     Locale = "sv_SE",
-                    ShopperStatement = "Trustly Test Deposit"
+                    ShopperStatement = "Trustly Test Deposit",
+                    SuccessURL = "https://google.com?q=success",
+                    FailURL = "https://google.com?q=fail",
                 }
             });
 
-            Assert.NotNull(response);
-            Assert.IsFalse(string.IsNullOrEmpty(response.URL));
+            Assert.That(response, Is.Not.Null);
+            Assert.That(response.URL, Is.Not.Empty);
         }
     }
 }

@@ -24,6 +24,12 @@ namespace Trustly.Api.Client.Validation
                 return EMPTY_VALIDATION_RESULTS;
             }
 
+            if (obj is Newtonsoft.Json.Linq.JToken)
+            {
+                // We do not validate JSON tokens. They are recursive and never fails.
+                return EMPTY_VALIDATION_RESULTS;
+            }
+
             validatedObjects.Add(obj);
             var list = new List<ValidationResult>();
             var result = Validator.TryValidateObject(obj, new ValidationContext(obj, null), list, true);

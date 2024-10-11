@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+    <!-- configuration elements -->
+
+    <NUnit>
+        <InternalTraceLevel>Debug</InternalTraceLevel>
+        <Verbosity>5</Verbosity>
+        <!-- ..... -->
+    </NUnit>
+</RunSettings>
