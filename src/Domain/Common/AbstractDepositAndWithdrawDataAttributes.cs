@@ -92,6 +92,11 @@ namespace Trustly.Api.Domain.Common
         /// If you are using Trustly from within your native iOS app, this attribute should be sent so that we can redirect the users back to your app in case an external app is used for authentication (for example Mobile Bank ID in Sweden).
         /// </summary>
         public string URLScheme { get; set; }
+        
+        /// <summary>
+        /// This value is only used for redirecting users back to the native app within the flows.
+        /// </summary>
+        public string ReturnToAppURL { get; set; }
     }
 
     public abstract class AbstractDepositAndWithdrawDataAttributes : AbstractDepositAndWithdrawAndSelectAccountDataAttributes
