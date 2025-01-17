@@ -157,6 +157,16 @@ namespace Trustly.Api.Client
             return this.SendRequest<WithdrawRequestData, WithdrawResponseData>(request, "Withdraw");
         }
 
+        public VerifyAccountResponseData VerifyAccount(VerifyAccountRequestData request, string uuid = null)
+        {
+            return this.SendRequest<VerifyAccountRequestData, VerifyAccountResponseData>(request, "VerifyAccount", uuid); 
+        }
+        
+        public GetAccountTransactionsResponseData GetAccountTransactions(GetAccountTransactionsRequestData request, string uuid = null)
+        {
+            return this.SendRequest<GetAccountTransactionsRequestData, GetAccountTransactionsResponseData>(request, "GetAccountTransactions", uuid); 
+        }
+        
         /// <summary>
         /// Used internally to create a request package.
         /// You usually do not need to directly call this method unless you are creating a custom
